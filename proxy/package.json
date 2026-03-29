@@ -1,7 +1,7 @@
 {
-  "name": "world-monitor-proxy",
+  "name": "infoperhour-proxy",
   "version": "2.0.0",
-  "description": "Proxy server for World Monitor - handles CORS, API keys, and AIS WebSocket streaming",
+  "description": "Proxy server for Infoperhour Laboratories - handles CORS, API keys, and AIS WebSocket streaming",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

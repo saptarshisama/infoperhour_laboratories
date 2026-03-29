@@ -1,5 +1,5 @@
 /**
- * World Monitor Proxy Server
+ * Infoperhour Laboratories Proxy Server
  * Handles: News RSS aggregation, OpenSky aircraft data, AISStream WebSocket → SSE
  */
 
@@ -332,12 +332,12 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.get('/', (req, res) => res.json({ name: 'World Monitor Proxy', version: '2.0.0' }));
+app.get('/', (req, res) => res.json({ name: 'Infoperhour Laboratories Proxy', version: '2.0.0' }));
 
 // ════════════════════════════════════════════════════════════════════
 //  START
 // ════════════════════════════════════════════════════════════════════
 app.listen(PORT, () => {
-  console.log(`[Proxy] World Monitor Proxy v2 running on port ${PORT}`);
+  console.log(`[Proxy] Infoperhour Laboratories Proxy v2 running on port ${PORT}`);
   initAISStream();
 });

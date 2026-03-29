@@ -1,16 +1,16 @@
-# World Monitor v2 — Global Intelligence Dashboard
+# Infoperhour Laboratories v2 — Global Intelligence Dashboard
 
 A real-time, hybrid static/proxy platform tracking global conflicts, aviation, marine traffic, disasters, and geopolitical events.
 
 ## 🗄️ Project Architecture
 
-World Monitor v2 uses a **Hybrid Architecture** to maximize performance while securely hiding API keys:
+Infoperhour Laboratories v2 uses a **Hybrid Architecture** to maximize performance while securely hiding API keys:
 1. **Frontend (Static Site):** HTML/CSS/JS shell. Can be hosted anywhere.
 2. **Backend (Proxy):** A lightweight Node.js/Express server that securely fetches API-key protected data (AISStream, OpenSky) and bypasses CORS restrictions (RSS News Feeds).
 
 ### File Structure
 ```text
-World_Monitor/
+infoperhour_laboratories/
 ├── index.html        ← Main dashboard UI
 ├── styles.css        ← Dark-mode design system & animations
 ├── app.js            ← Main orchestrator, tabs, filters, & map overlays
@@ -31,7 +31,7 @@ World_Monitor/
 
 ## 💻 Local Development
 
-To run World Monitor locally, you need to run **both** the frontend and the proxy server.
+To run Infoperhour Laboratories locally, you need to run **both** the frontend and the proxy server.
 
 ### 1. Start the Backend Proxy
 Open a terminal and run:
@@ -49,7 +49,7 @@ You can use the python server you are already using, or `npx`:
 
 **Option A (Python - Recommended if installed):**
 ```bash
-# Run this from the main World_Monitor folder
+# Run this from the main infoperhour_laboratories folder
 python -m http.server 8765
 ```
 
@@ -84,7 +84,7 @@ The chat relies on Firebase to allow multi-user interactions.
 
 ### Step 1 — Create Firebase Project
 1. Go to [console.firebase.google.com](https://console.firebase.google.com)
-2. Click **Add project** → name it `world-monitor` → Continue
+2. Click **Add project** → name it `infoperhour-labs` → Continue
 3. Disable Google Analytics (optional) → **Create project**
 
 ### Step 2 — Enable Realtime Database
@@ -94,7 +94,7 @@ The chat relies on Firebase to allow multi-user interactions.
 ### Step 3 — Get your config & Update `chat.js`
 1. Click the **gear icon** → **Project settings**
 2. Scroll to **Your apps** → Click `</>` (Web)
-3. Register app (name it `world-monitor-web`)
+3. Register app (name it `infoperhour-web`)
 4. Copy the `firebaseConfig` object and paste it into `chat.js` replacing the placeholder:
 ```javascript
 const FIREBASE_CONFIG = {
@@ -113,7 +113,8 @@ In the Firebase console → Realtime Database → **Rules** tab, paste the follo
     "chat": {
       "messages": { ".read": true, ".write": true },
       "presence": { ".read": true, ".write": true },
-      "typing": { ".read": true, ".write": true }
+      "typing": { ".read": true, ".write": true },
+      "users": { ".read": true, ".write": true }
     }
   }
 }

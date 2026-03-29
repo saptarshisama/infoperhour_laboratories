@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>World Monitor — Global Intelligence Dashboard</title>
-  <meta name="description" content="Real-time global intelligence platform tracking conflicts, aviation, marine traffic, disasters and geopolitical events." />
+  <title>Infoperhour Laboratories — Global Intelligence</title>
+  <meta name="description" content="Real-time intelligence platform tracking global events." />
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -27,8 +27,7 @@
   <div id="tb-left">
     <div id="brand">
       <span id="brand-pulse"></span>
-      <span id="brand-name">WORLD MONITOR</span>
-      <span id="brand-ver">v2</span>
+      <span id="brand-name">INFOPERHOUR LABORATORIES</span>
     </div>
     <div id="live-badge"><span class="pdot red"></span>LIVE</div>
     <div id="event-count-wrap">
@@ -212,11 +211,12 @@
         <button id="send-btn">➤</button>
       </div>
     </div>
-    <!-- Username modal -->
+    <!-- Username/Email modal -->
     <div id="name-modal">
       <div id="name-box">
         <div class="modal-title">IDENTIFY YOURSELF</div>
-        <div class="modal-sub">Choose a callsign to join the network</div>
+        <div class="modal-sub">Provide your credentials to join the secure network</div>
+        <input id="email-in" type="email" placeholder="Enter email address…" autocomplete="off" />
         <input id="name-in" type="text" placeholder="Enter callsign…" maxlength="20" autocomplete="off" />
         <button id="name-confirm">CONNECT</button>
       </div>

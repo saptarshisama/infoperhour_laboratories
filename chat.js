@@ -31,6 +31,7 @@ const CHAT = (() => {
 
   let db           = null;
   let username     = '';
+  let email        = '';
   let userColor    = '';
   let typingTimer  = null;
   let initialized  = false;
@@ -106,9 +107,11 @@ const CHAT = (() => {
 
   // ── Username modal ────────────────────────────────────────────────────
   function promptUsername() {
-    const stored = localStorage.getItem('wm_username');
-    if (stored) {
-      username  = stored;
+    const storedUser = localStorage.getItem('wm_username');
+    const storedEmail = localStorage.getItem('wm_email');
+    if (storedUser && storedEmail) {
+      username  = storedUser;
+      email     = storedEmail;
       userColor = localStorage.getItem('wm_color') || COLORS[0];
       $('name-modal').style.display = 'none';
       $('user-badge').textContent   = username;
@@ -117,23 +120,36 @@ const CHAT = (() => {
     }
 
     $('name-modal').style.display = 'flex';
-    const inp = $('name-in');
+    const emailInp = $('email-in');
+    const nameInp = $('name-in');
     const btn = $('name-confirm');
 
     const confirm = () => {
-      const val = inp.value.trim().replace(/[^a-zA-Z0-9_\-]/g,'').slice(0,20);
-      if (!val) { inp.style.borderColor = '#ef4444'; return; }
-      username  = val;
+      const eVal = emailInp.value.trim();
+      const nVal = nameInp.value.trim().replace(/[^a-zA-Z0-9_\-]/g,'').slice(0,20);
+      
+      if (!eVal || !eVal.includes('@')) { emailInp.style.borderColor = '#ef4444'; return; }
+      emailInp.style.borderColor = 'var(--border)';
+      
+      if (!nVal) { nameInp.style.borderColor = '#ef4444'; return; }
+      nameInp.style.borderColor = 'var(--border)';
+      
+      email     = eVal;
+      username  = nVal;
       userColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+      
       localStorage.setItem('wm_username', username);
+      localStorage.setItem('wm_email', email);
       localStorage.setItem('wm_color', userColor);
+      
       $('name-modal').style.display = 'none';
       $('user-badge').textContent   = username;
       onReady();
     };
     btn.addEventListener('click', confirm);
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') confirm(); });
-    setTimeout(() => inp.focus(), 100);
+    emailInp.addEventListener('keydown', e => { if (e.key === 'Enter') confirm(); });
+    nameInp.addEventListener('keydown', e => { if (e.key === 'Enter') confirm(); });
+    setTimeout(() => emailInp.focus(), 100);
   }
 
   // ── Firebase connect ─────────────────────────────────────────────────
@@ -141,6 +157,10 @@ const CHAT = (() => {
     const msgsRef    = db.ref('chat/messages');
     const presenceRef= db.ref(`chat/presence/${username}`);
     const typingRef  = db.ref(`chat/typing/${username}`);
+    const registryRef= db.ref(`chat/users/${username}`);
+    
+    // Register user details silently
+    registryRef.update({ email: email, last_seen: Date.now() });
 
     presenceRef.set({ online: true, ts: Date.now() });
     presenceRef.onDisconnect().remove();
@@ -167,7 +187,7 @@ const CHAT = (() => {
     });
 
     // Messages
-    msgsRef.limitToLast(80).on('child_added', snap => {
+    msgsRef.limitToLast(200).on('child_added', snap => {
       const m = snap.val();
       if (m) appendMsg(m, m.username === username);
     });
@@ -193,9 +213,9 @@ const CHAT = (() => {
 
     if (isFirebase && db) {
       db.ref('chat/typing/' + username).remove();
-      db.ref('chat/messages').push({ username, text, color: userColor, ts: Date.now() });
+      db.ref('chat/messages').push({ username, email, text, color: userColor, ts: Date.now() });
     } else {
-      appendMsg({ username, text, color: userColor, ts: Date.now() }, true);
+      appendMsg({ username, email, text, color: userColor, ts: Date.now() }, true);
     }
   }
 
