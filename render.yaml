@@ -1,0 +1,39 @@
+# render.yaml — Deploy both services from this single repo
+# 1. Push this repo to GitHub
+# 2. Go to dash.render.com → New → Blueprint → connect repo
+# 3. Render auto-reads this file and creates both services
+
+services:
+
+  # ─── Proxy Backend (Node.js) ─────────────────────────────────────────
+  - type: web
+    name: world-monitor-proxy
+    env: node
+    plan: free
+    rootDir: proxy
+    buildCommand: npm install
+    startCommand: node server.js
+    autoDeploy: true
+    envVars:
+      - key: AISSTREAM_API_KEY
+        sync: false   # Set manually in Render dashboard
+      - key: OPENSKY_USERNAME
+        sync: false   # saptarshis83@gmail.com
+      - key: OPENSKY_PASSWORD
+        sync: false   # your OpenSky password
+
+  # ─── Frontend (Static Site) ───────────────────────────────────────────
+  - type: web
+    name: world-monitor-frontend
+    env: static
+    plan: free
+    staticPublishPath: .
+    buildCommand: ""
+    autoDeploy: true
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
