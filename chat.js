@@ -42,9 +42,20 @@ const CHAT = (() => {
   // ── DOM helpers ──────────────────────────────────────────────────────
   const $ = id => document.getElementById(id);
   function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function utcTime(ts) {
+  function formatDoubleTime(ts) {
     const d = new Date(ts);
-    return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`;
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    
+    const uDay = d.getUTCDate();
+    const uMo = months[d.getUTCMonth()];
+    const uYr = d.getUTCFullYear();
+    const uHr = String(d.getUTCHours()).padStart(2,'0');
+    const uMn = String(d.getUTCMinutes()).padStart(2,'0');
+    
+    const lHr = String(d.getHours()).padStart(2,'0');
+    const lMn = String(d.getMinutes()).padStart(2,'0');
+    
+    return `${uDay} ${uMo} ${uYr} ${uHr}:${uMn} UTC / ${lHr}:${lMn} Local`;
   }
   function scrollBottom() {
     const c = $('chat-msgs');
@@ -61,7 +72,7 @@ const CHAT = (() => {
       <div class="cmsg-hdr">
         <div class="cavatar" style="background:${msg.color||'#64748b'}">${esc(msg.username).slice(0,2).toUpperCase()}</div>
         <span class="cuname" style="color:${msg.color||'#e2e8f0'}">${esc(msg.username)}</span>
-        <span class="cts">${utcTime(msg.ts)}</span>
+        <span class="cts">${formatDoubleTime(msg.ts)}</span>
       </div>
       <div class="cbody">${esc(msg.text)}</div>`;
     c.appendChild(el);
@@ -211,11 +222,22 @@ const CHAT = (() => {
     if (!text || !username) return;
     inp.value = '';
 
+    const d = new Date();
+    const payload = { 
+      username, 
+      email, 
+      text, 
+      color: userColor, 
+      ts: d.getTime(),
+      timestamp_utc: d.toUTCString(),
+      timestamp_local: d.toString()
+    };
+
     if (isFirebase && db) {
       db.ref('chat/typing/' + username).remove();
-      db.ref('chat/messages').push({ username, email, text, color: userColor, ts: Date.now() });
+      db.ref('chat/messages').push(payload);
     } else {
-      appendMsg({ username, email, text, color: userColor, ts: Date.now() }, true);
+      appendMsg(payload, true);
     }
   }
 
