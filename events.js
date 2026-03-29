@@ -34,6 +34,15 @@ const EVENTS = (() => {
     return `${Math.floor(hr/24)}d ago`;
   }
 
+  function extractLocation(text, fallback) {
+    const match = text.match(/\b(?:in|near|at|outside|targeting|strikes) ([A-Z][a-zA-Z\s\-]+?)(?:'s|,|\.|$)/);
+    if (match && match[1].length > 2 && match[1].length < 30) {
+      const loc = match[1].trim();
+      if (!/The|This|A|An|It|He|She|They|Their/i.test(loc)) return loc;
+    }
+    return fallback || 'Global';
+  }
+
   // ── USGS Earthquakes ────────────────────────────────────────────────
   async function fetchEarthquakes() {
     const res  = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');
@@ -102,15 +111,22 @@ const EVENTS = (() => {
     return (json.articles || []).slice(0, 25).map(a => {
       const title = a.title || 'Untitled';
       const cat   = classifyGDELT(title);
-      const coords= a.geolocation
-        ? [parseFloat(a.geolocation.lat), parseFloat(a.geolocation.lon)]
-        : [Math.random() * 100 - 20, Math.random() * 340 - 170];
+      const loc   = extractLocation(title, a.sourcecountry || a.domain || 'Global');
+      
+      let lat = null, lon = null;
+      if (a.geolocation) {
+         lat = parseFloat(a.geolocation.lat); lon = parseFloat(a.geolocation.lon);
+      } else {
+         const crd = lookupCoords(loc);
+         if (crd) { lat = crd[0]; lon = crd[1]; }
+      }
+
       return {
         id: makeid(a.url),
         category: cat,
         headline: title,
-        location: a.sourcecountry || a.domain || 'Global',
-        lat: coords[0], lon: coords[1],
+        location: loc,
+        lat, lon,
         severity: classifySev(title),
         time: a.seendate ? parseGDELTDate(a.seendate) : new Date(),
         source: a.domain || 'GDELT',
@@ -129,10 +145,10 @@ const EVENTS = (() => {
     return 'political';
   }
   function classifySev(t) {
-    if (/nuclear|catastrophic|massacre|genocide|category [45]|7\.\d magnitude/i.test(t)) return 5;
-    if (/dozens killed|hundreds|major|emergency|invasion/i.test(t)) return 4;
-    if (/killed|dead|attack|strike|launched|escalat/i.test(t)) return 3;
-    if (/concern|tension|warning|protest/i.test(t)) return 2;
+    if (/nuclear|catastrophic|massacre|genocide|category [45]|8\.\d magnitude|assassinat|icbm|carrier strike/i.test(t)) return 5;
+    if (/dozens killed|hundreds|major|emergency|invasion|hypersonic|ballistic|terrorist|defus|ambush/i.test(t)) return 4;
+    if (/killed|dead|attack|strike|launched|escalat|bomb|drone|missile|destroy|casualties/i.test(t)) return 3;
+    if (/concern|tension|warning|protest|sanction|deploy|threat|standoff/i.test(t)) return 2;
     return 1;
   }
   function parseGDELTDate(s) {
@@ -171,6 +187,35 @@ const EVENTS = (() => {
     UKR:[48.4,31.2],ARE:[23.4,53.8],GBR:[55.4,-3.4],USA:[37.1,-95.7],VEN:[6.4,-66.6],
     VNM:[14.1,108.3],YEM:[15.6,48.5],ZMB:[-13.1,27.8],ZWE:[-19.0,29.2],
   };
+
+  const CITY_COORDS = {
+    'Kyiv': [50.45, 30.52], 'Moscow': [55.75, 37.6], 'Washington': [38.9, -77.0],
+    'London': [51.5, -0.1], 'Paris': [48.8, 2.3], 'Beijing': [39.9, 116.4],
+    'Tehran': [35.68, 51.38], 'Jerusalem': [31.7, 35.2], 'Tel Aviv': [32.0, 34.7],
+    'Gaza': [31.5, 34.4], 'Beirut': [33.89, 35.5], 'Damascus': [33.51, 36.29],
+    'Baghdad': [33.31, 44.36], 'Kabul': [34.55, 69.2], 'Taipei': [25.0, 121.5],
+    'Seoul': [37.56, 126.97], 'Pyongyang': [39.03, 125.75], 'Tokyo': [35.67, 139.65],
+    'Brussels': [50.85, 4.35], 'Berlin': [52.52, 13.4], 'Geneva': [46.2, 6.1],
+    'New York': [40.7, -74.0], 'Delhi': [28.61, 77.2], 'Islamabad': [33.68, 73.04],
+    'Riyadh': [24.71, 46.67], 'Dubai': [25.2, 55.27], 'Sanaa': [15.36, 44.19],
+    'Khartoum': [15.5, 32.55], 'Mogadishu': [2.04, 45.34], 'Kinshasa': [-4.44, 15.26],
+    'Caracas': [10.48, -66.9], 'Bogota': [4.71, -74.07], 'Havana': [23.11, -82.36],
+    'Manila': [14.59, 120.98], 'Jakarta': [-6.2, 106.8], 'Myanmar': [16.8, 96.1],
+    'Muscat': [23.58, 58.40], 'Kirishi': [59.45, 32.01], 'Tema Manhean': [5.64, -0.01],
+    'Middle East': [31.0, 35.0], 'Europe': [48.0, 10.0], 'USA': [38.0, -97.0],
+    'Russia': [60.0, 90.0], 'China': [35.0, 105.0], 'Ukraine': [48.37, 31.16],
+    'Iran': [32.42, 53.68], 'Israel': [31.04, 34.85], 'Lebanon': [33.85, 35.86],
+    'Pakistan': [30.37, 69.34], 'Saudi Arabia': [23.88, 45.07]
+  };
+
+  function lookupCoords(name) {
+    if (!name) return null;
+    const key = Object.keys(CITY_COORDS).find(k => name.toLowerCase().includes(k.toLowerCase()));
+    if (key) return CITY_COORDS[key];
+    const cc = Object.keys(COUNTRY_COORDS).find(k => name.toUpperCase() === k);
+    if (cc) return COUNTRY_COORDS[cc];
+    return null;
+  }
 
   // ── Public API ───────────────────────────────────────────────────────
   async function fetchAll() {

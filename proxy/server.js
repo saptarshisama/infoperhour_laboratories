@@ -61,10 +61,10 @@ function classifyArticle(title, description, feedCat) {
 
 function severityFromTitle(title) {
   const t = title.toLowerCase();
-  if (/nuclear|catastrophic|mass casualt|hundreds (killed|dead)|major earthquake|category [45]/.test(t)) return 5;
-  if (/dozens (killed|dead)|major (offensive|attack|strike)|invasion|embargo/.test(t)) return 4;
-  if (/killed|dead|attack|strike|launched|escalat|bombing/.test(t)) return 3;
-  if (/warning|tension|concern|protest|sanctions/.test(t)) return 2;
+  if (/nuclear|catastrophic|mass casualt|hundreds (killed|dead)|major earthquake|category [45]|8\.\d magnitude|assassinat|icbm|carrier strike/.test(t)) return 5;
+  if (/dozens (killed|dead)|major (offensive|attack|strike)|invasion|embargo|hypersonic|ballistic|terrorist|defus|ambush/.test(t)) return 4;
+  if (/killed|dead|attack|strike|launched|escalat|bombing|drone|missile|destroy|casualties/.test(t)) return 3;
+  if (/warning|tension|concern|protest|sanctions|deploy|threat|standoff/.test(t)) return 2;
   return 1;
 }
 
