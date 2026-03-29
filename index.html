@@ -240,11 +240,9 @@
 </div>
 
 <script>
-// ── Global Config — update PROXY_URL after Render deploy ──────────────
+// ── Global Config — Permanently linked to cloud proxy ──────────────
 window.CONFIG = {
-  PROXY_URL: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:3001'
-    : 'https://world-monitor-proxy.onrender.com', // ← UPDATE after Render deploy
+  PROXY_URL: 'https://world-monitor-proxy.onrender.com', 
 };
 </script>
 
