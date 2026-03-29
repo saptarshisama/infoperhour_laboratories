@@ -185,9 +185,37 @@ app.get('/api/aircraft', async (req, res) => {
     res.json(result);
   } catch (e) {
     const msg = e.message || String(e);
-    console.error('[Aircraft] Error:', msg);
-    const fallback = cache.get('aircraft') || { count: 0, aircraft: [], error: msg };
-    res.status(msg.includes('429') ? 429 : 500).json(fallback);
+    console.warn('[Aircraft] OpenSky failed, failing over to ADSB.lol...', msg);
+    
+    try {
+      const res2 = await fetch('https://api.adsb.lol/v2/ladd', { timeout: 8000 });
+      if (!res2.ok) throw new Error(`ADSB.lol HTTP ${res2.status}`);
+      const data2 = await res2.json();
+      const raw2  = data2.ac || [];
+      
+      const aircraft = raw2
+        .filter(s => s.lat != null && s.lon != null)
+        .map(s => ({
+          icao24:    s.hex || '',
+          callsign:  (s.flight || '').trim() || s.hex,
+          country:   'LADD (Blocked)',
+          lon:       s.lon,
+          lat:       s.lat,
+          altitude:  Math.round((s.alt_geom || s.alt_baro || 0) * 0.3048),
+          speed:     Math.round((s.gs || 0) * 1.852),
+          heading:   Math.round(s.track || 0),
+          vrate:     Math.round((s.baro_rate || 0) * 0.3048)
+        }));
+        
+      const result = { count: aircraft.length, ts: Date.now(), aircraft, fallback: 'adsblol' };
+      cache.set('aircraft', result, 60);
+      return res.json(result);
+      
+    } catch (e2) {
+      console.error('[Aircraft] Failover crashed:', e2.message);
+      const fallback = cache.get('aircraft') || { count: 0, aircraft: [], error: 'All APIs Failed' };
+      return res.status(500).json(fallback);
+    }
   }
 });
 
