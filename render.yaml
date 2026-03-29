@@ -7,7 +7,7 @@ services:
 
   # ─── Proxy Backend (Node.js) ─────────────────────────────────────────
   - type: web
-    name: world-monitor-proxy
+    name: infoperhour-proxy
     env: node
     plan: free
     rootDir: proxy
@@ -24,7 +24,7 @@ services:
 
   # ─── Frontend (Static Site) ───────────────────────────────────────────
   - type: web
-    name: world-monitor-frontend
+    name: infoperhour-frontend
     env: static
     staticPublishPath: .
     buildCommand: ""
