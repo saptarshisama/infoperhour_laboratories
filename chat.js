@@ -16,13 +16,13 @@ const CHAT = (() => {
   // ▼  PASTE YOUR FIREBASE CONFIG HERE  ▼
   // ═════════════════════════════════════════════
   const FIREBASE_CONFIG = {
-    apiKey:            'YOUR_API_KEY',
-    authDomain:        'YOUR_PROJECT.firebaseapp.com',
-    databaseURL:       'https://YOUR_PROJECT-default-rtdb.firebaseio.com',
-    projectId:         'YOUR_PROJECT',
-    storageBucket:     'YOUR_PROJECT.appspot.com',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    appId:             'YOUR_APP_ID',
+    apiKey:            "AIzaSyDAqGGMLNl8ZWDPPeCEL0QmC6JkLe0vo6c",
+    authDomain:        "infoperhour-labs.firebaseapp.com",
+    databaseURL:       "https://infoperhour-labs-default-rtdb.firebaseio.com",
+    projectId:         "infoperhour-labs",
+    storageBucket:     "infoperhour-labs.firebasestorage.app",
+    messagingSenderId: "434764649923",
+    appId:             "1:434764649923:web:b73b86e77be8f5ea35d976",
   };
   // ═════════════════════════════════════════════
 
