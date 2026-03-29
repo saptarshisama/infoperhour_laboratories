@@ -16,7 +16,7 @@ services:
     autoDeploy: true
     envVars:
       - key: AISSTREAM_API_KEY
-
+        sync: false
 
   # ─── Frontend (Static Site) ───────────────────────────────────────────
   - type: web
