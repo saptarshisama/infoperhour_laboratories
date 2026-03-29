@@ -26,7 +26,6 @@ services:
   - type: web
     name: world-monitor-frontend
     env: static
-    plan: free
     staticPublishPath: .
     buildCommand: ""
     autoDeploy: true
