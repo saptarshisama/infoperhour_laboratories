@@ -144,7 +144,8 @@ app.get('/api/aircraft', async (req, res) => {
     const headers = { 'User-Agent': 'WorldMonitor/2.0' };
 
     if (process.env.OPENSKY_USERNAME && process.env.OPENSKY_PASSWORD &&
-        process.env.OPENSKY_PASSWORD !== 'YOUR_OPENSKY_PASSWORD_HERE') {
+        process.env.OPENSKY_PASSWORD !== 'YOUR_OPENSKY_PASSWORD_HERE' &&
+        !process.env.OPENSKY_USERNAME.includes('@')) {
       const creds = Buffer.from(`${process.env.OPENSKY_USERNAME}:${process.env.OPENSKY_PASSWORD}`).toString('base64');
       headers['Authorization'] = `Basic ${creds}`;
     }
@@ -183,9 +184,10 @@ app.get('/api/aircraft', async (req, res) => {
     console.log(`[Aircraft] Fetched ${aircraft.length} airborne aircraft`);
     res.json(result);
   } catch (e) {
-    console.error('[Aircraft] Error:', e.message);
-    const fallback = cache.get('aircraft_last') || { count: 0, aircraft: [], error: e.message };
-    res.status(e.message.includes('429') ? 429 : 500).json(fallback);
+    const msg = e.message || String(e);
+    console.error('[Aircraft] Error:', msg);
+    const fallback = cache.get('aircraft') || { count: 0, aircraft: [], error: msg };
+    res.status(msg.includes('429') ? 429 : 500).json(fallback);
   }
 });
 

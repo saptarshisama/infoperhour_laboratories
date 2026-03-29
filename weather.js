@@ -117,6 +117,9 @@ const WEATHER = (() => {
       m.addTo(leafletMap);
       markers.set(w.name, m);
     });
+
+    const el = document.getElementById('ovlc-weather');
+    if (el) el.textContent = markers.size.toString();
   }
 
   function enable(map) {
