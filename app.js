@@ -228,4 +228,32 @@
     } catch (e) { console.warn('[APP] Refresh failed:', e); }
   }, 5 * 60 * 1000);
 
+  // ── Mobile Navigation ───────────────────────────────────────────────────
+  const btnMenu = $('btn-menu');
+  const btnChat = $('btn-chat');
+  const lp = $('left-panel');
+  const rp = $('right-panel');
+
+  if (btnMenu) {
+    btnMenu.addEventListener('click', () => {
+      if (rp.classList.contains('open')) {
+        rp.classList.remove('open');
+        btnChat.classList.remove('active');
+      }
+      lp.classList.toggle('open');
+      btnMenu.classList.toggle('active');
+    });
+  }
+  
+  if (btnChat) {
+    btnChat.addEventListener('click', () => {
+      if (lp.classList.contains('open')) {
+        lp.classList.remove('open');
+        btnMenu.classList.remove('active');
+      }
+      rp.classList.toggle('open');
+      btnChat.classList.toggle('active');
+    });
+  }
+
 })();
