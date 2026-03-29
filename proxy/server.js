@@ -137,85 +137,39 @@ app.get('/api/news', async (req, res) => {
 // ════════════════════════════════════════════════════════════════════
 
 app.get('/api/aircraft', async (req, res) => {
-  const cached = cache.get('aircraft');
-  if (cached) return res.json(cached);
+  if (cache.has('aircraft')) {
+    res.setHeader('X-Cache', 'HIT');
+    return res.json(cache.get('aircraft'));
+  }
 
   try {
-    const headers = { 'User-Agent': 'WorldMonitor/2.0' };
-
-    if (process.env.OPENSKY_USERNAME && process.env.OPENSKY_PASSWORD &&
-        process.env.OPENSKY_PASSWORD !== 'YOUR_OPENSKY_PASSWORD_HERE' &&
-        !process.env.OPENSKY_USERNAME.includes('@')) {
-      const creds = Buffer.from(`${process.env.OPENSKY_USERNAME}:${process.env.OPENSKY_PASSWORD}`).toString('base64');
-      headers['Authorization'] = `Basic ${creds}`;
-    }
-
-    const resp = await fetch('https://opensky-network.org/api/states/all', {
-      headers,
-      timeout: 20000,
-    });
-
-    if (!resp.ok) throw new Error(`OpenSky returned HTTP ${resp.status}`);
-
-    const data = await resp.json();
-    const raw  = data.states || [];
-
-    // OpenSky state vector format:
-    // [0]icao24 [1]callsign [2]origin_country [3]time_position [4]last_contact
-    // [5]longitude [6]latitude [7]baro_altitude [8]on_ground [9]velocity
-    // [10]true_track [11]vertical_rate [12]sensors [13]geo_altitude [14]squawk
-    const aircraft = raw
-      .filter(s => s[5] != null && s[6] != null && !s[8])   // has position, airborne
-      .filter(s => (s[7] || s[13] || 0) > 100)              // above 100m
-      .map(s => ({
-        icao24:    s[0],
-        callsign:  (s[1] || '').trim() || s[0],
-        country:   s[2] || '',
-        lon:       s[5],
-        lat:       s[6],
-        altitude:  Math.round(s[7] || s[13] || 0),
-        speed:     Math.round((s[9] || 0) * 3.6),  // m/s → km/h
-        heading:   Math.round(s[10] || 0),
-        vrate:     s[11] || 0,
-      }));
-
-    const result = { count: aircraft.length, ts: Date.now(), aircraft };
-    cache.set('aircraft', result, 60);
-    console.log(`[Aircraft] Fetched ${aircraft.length} airborne aircraft`);
-    res.json(result);
-  } catch (e) {
-    const msg = e.message || String(e);
-    console.warn('[Aircraft] OpenSky failed, failing over to ADSB.lol...', msg);
+    const res2 = await fetch('https://api.adsb.lol/v2/mil', { timeout: 12000 });
+    if (!res2.ok) throw new Error(`ADSB.lol HTTP ${res2.status}`);
+    const data2 = await res2.json();
+    const raw2  = data2.ac || [];
     
-    try {
-      const res2 = await fetch('https://api.adsb.lol/v2/ladd', { timeout: 8000 });
-      if (!res2.ok) throw new Error(`ADSB.lol HTTP ${res2.status}`);
-      const data2 = await res2.json();
-      const raw2  = data2.ac || [];
+    const aircraft = raw2
+      .filter(s => s.lat != null && s.lon != null)
+      .map(s => ({
+        icao24:    s.hex || '',
+        callsign:  (s.flight || '').trim() || s.hex,
+        country:   s.ownOp || 'Military / Gov',
+        lon:       s.lon,
+        lat:       s.lat,
+        altitude:  Math.round((s.alt_geom || s.alt_baro || 0) * 0.3048),
+        speed:     Math.round((s.gs || 0) * 1.852),
+        heading:   Math.round(s.track || 0),
+        vrate:     Math.round((s.baro_rate || 0) * 0.3048)
+      }));
       
-      const aircraft = raw2
-        .filter(s => s.lat != null && s.lon != null)
-        .map(s => ({
-          icao24:    s.hex || '',
-          callsign:  (s.flight || '').trim() || s.hex,
-          country:   'LADD (Blocked)',
-          lon:       s.lon,
-          lat:       s.lat,
-          altitude:  Math.round((s.alt_geom || s.alt_baro || 0) * 0.3048),
-          speed:     Math.round((s.gs || 0) * 1.852),
-          heading:   Math.round(s.track || 0),
-          vrate:     Math.round((s.baro_rate || 0) * 0.3048)
-        }));
-        
-      const result = { count: aircraft.length, ts: Date.now(), aircraft, fallback: 'adsblol' };
-      cache.set('aircraft', result, 60);
-      return res.json(result);
-      
-    } catch (e2) {
-      console.error('[Aircraft] Failover crashed:', e2.message);
-      const fallback = cache.get('aircraft') || { count: 0, aircraft: [], error: 'All APIs Failed' };
-      return res.status(500).json(fallback);
-    }
+    const result = { count: aircraft.length, ts: Date.now(), aircraft, source: 'adsblol-mil' };
+    cache.set('aircraft', result, 60);
+    return res.json(result);
+    
+  } catch (e2) {
+    console.error('[Aircraft] Military API failed:', e2.message);
+    const fallback = cache.get('aircraft') || { count: 0, aircraft: [], error: 'API Offline' };
+    return res.status(500).json(fallback);
   }
 });
 
@@ -281,6 +235,9 @@ function initAISStream() {
       if (Math.abs(pr.Latitude) > 90 || Math.abs(pr.Longitude) > 180) return;
 
       const mmsi = String(meta.MMSI || pr.UserID || 0);
+      const cat = getShipCategory(meta.ShipType || 0);
+      if (cat !== 'military' && cat !== 'tanker') return; // User implicitly filtered
+
       const ship = {
         mmsi,
         name:     (meta.ShipName || '').trim() || mmsi,
@@ -290,7 +247,7 @@ function initAISStream() {
         speed:    pr.SpeedOverGround || 0,
         status:   pr.NavigationalStatus,
         type:     meta.ShipType || 0,
-        cat:      getShipCategory(meta.ShipType || 0),
+        cat,
         ts:       Date.now(),
       };
 
