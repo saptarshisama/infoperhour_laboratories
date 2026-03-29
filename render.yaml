@@ -16,11 +16,7 @@ services:
     autoDeploy: true
     envVars:
       - key: AISSTREAM_API_KEY
-        sync: false   # Set manually in Render dashboard
-      - key: OPENSKY_USERNAME
-        sync: false   # saptarshis83@gmail.com
-      - key: OPENSKY_PASSWORD
-        sync: false   # your OpenSky password
+
 
   # ─── Frontend (Static Site) ───────────────────────────────────────────
   - type: web

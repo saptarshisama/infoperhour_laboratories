@@ -184,10 +184,6 @@ const MAX_SHIPS     = 3000;
 function getShipCategory(type) {
   if (type === 35)                   return 'military';
   if (type >= 80 && type <= 89)      return 'tanker';
-  if (type >= 70 && type <= 79)      return 'cargo';
-  if (type >= 60 && type <= 69)      return 'passenger';
-  if (type === 30)                   return 'fishing';
-  if (type >= 31 && type <= 32)      return 'tug';
   return 'other';
 }
 

@@ -6,7 +6,7 @@ A real-time, hybrid static/proxy platform tracking global conflicts, aviation, m
 
 Infoperhour Laboratories v2 uses a **Hybrid Architecture** to maximize performance while securely hiding API keys:
 1. **Frontend (Static Site):** HTML/CSS/JS shell. Can be hosted anywhere.
-2. **Backend (Proxy):** A lightweight Node.js/Express server that securely fetches API-key protected data (AISStream, OpenSky) and bypasses CORS restrictions (RSS News Feeds).
+2. **Backend (Proxy):** A lightweight Node.js/Express server that securely fetches API-key protected data (AISStream, ADSB.lol) and bypasses CORS restrictions (RSS News Feeds).
 
 ### File Structure
 ```text
@@ -16,7 +16,7 @@ infoperhour_laboratories/
 ├── app.js            ← Main orchestrator, tabs, filters, & map overlays
 ├── events.js         ← OSINT fetching: Quakes (USGS), Humanitarian (ReliefWeb), Conflict (GDELT), Proxy News
 ├── map.js            ← Leaflet interactive map setup
-├── aviation.js       ← OpenSky live aircraft mapping via proxy
+├── aviation.js       ← ADSB live military aircraft mapping via proxy
 ├── marine.js         ← AISStream WebSocket live ships via proxy
 ├── weather.js        ← Open-Meteo severe weather alerts
 ├── chat.js           ← Firebase real-time chat module
@@ -70,10 +70,8 @@ You can host both the frontend and backend on Render for free using the provided
 3. Render will read `render.yaml` and automatically create two services:
    - `world-monitor-frontend` (Static Site)
    - `world-monitor-proxy` (Web Service)
-4. **Environment Variables**: In the Render dashboard, go to the `world-monitor-proxy` service → **Environment** and add the following keys securely (do NOT commit these to git):
+4. **Environment Variables**: In the Render dashboard, go to the `world-monitor-proxy` service → **Environment** and add:
    - `AISSTREAM_API_KEY` (Get from aisstream.io)
-   - `OPENSKY_USERNAME`
-   - `OPENSKY_PASSWORD`
 5. **Update Frontend Config**: Once the proxy is live, get its URL (e.g., `https://world-monitor-proxy.onrender.com`) and update `CONFIG.PROXY_URL` at the bottom of `index.html`.
 
 ---
@@ -128,7 +126,7 @@ In the Firebase console → Realtime Database → **Rules** tab, paste the follo
 | Source | Data | Tier Limit / Notes |
 |---------|-----------|-------|
 | **AISStream** | Live Marine Traffic (SSE) | Free key required |
-| **OpenSky Network** | Live Aviation (REST) | 1,000 req/day (Proxy caches for 60s) |
+| **ADSB.lol** | Live Military Aviation | Free / Open / No Key |
 | **GDELT** | Conflict/Political Events | Free API (~15 min delay) |
 | **USGS** | Global Earthquakes | Free / No Key |
 | **ReliefWeb** | Humanitarian Disasters (UN) | Free / No Key |

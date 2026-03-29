@@ -1,5 +1,5 @@
 /**
- * aviation.js — OpenSky Network Live Aircraft Layer
+ * aviation.js — ADSB.lol Live Military Aircraft Layer
  * Uses Viewport Culling & LOD to run butter-smooth.
  */
 

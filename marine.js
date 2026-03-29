@@ -14,10 +14,6 @@ const MARINE = (() => {
   const SHIP_STYLES = {
     military:  { color: '#a78bfa' }, 
     tanker:    { color: '#ef4444' }, 
-    cargo:     { color: '#f59e0b' }, 
-    passenger: { color: '#4ade80' }, 
-    fishing:   { color: '#22d3ee' }, 
-    tug:       { color: '#60a5fa' }, 
     other:     { color: '#64748b' }, 
   };
 
