@@ -141,14 +141,15 @@
     card.className = `ev-card ${ev.category}`;
     card.innerHTML = `
       <div class="ev-top">
-        <span class="ev-badge ${ev.category}">${cat.label}</span>
-        <span class="ev-sev s${ev.severity}">S${ev.severity}</span>
+        <div class="mts-badges">
+          <span class="ev-badge ${ev.category}">${cat.label}</span>
+          <span class="ev-sev s${ev.severity}">S${ev.severity}</span>
+        </div>
+        <span class="ev-time">${EVENTS.timeAgoFn(ev.time)}</span>
       </div>
       <div class="ev-headline">${escHtml(ev.headline)}</div>
-      <div class="ev-meta">
-        <span class="ev-loc">${escHtml(ev.location || '')}</span>
-        <span class="ev-src">${escHtml(ev.source)}</span>
-        <span class="ev-time">${EVENTS.timeAgoFn(ev.time)}</span>
+      <div class="ev-meta mts-meta">
+        <span class="ev-loc">📍 ${escHtml(ev.location || ev.source)}</span>
       </div>`;
     card.addEventListener('click', () => MAP.showPopup(ev));
     return card;
@@ -182,14 +183,15 @@
     const timeStr = EVENTS.timeAgoFn(new Date(n.publishedAt));
     card.innerHTML = `
       <div class="ev-top">
-        <span class="ev-badge ${n.category}">${cat.label}</span>
-        <span class="ev-sev s${n.severity}">S${n.severity}</span>
+        <div class="mts-badges">
+          <span class="ev-badge ${n.category}">${cat.label}</span>
+          <span class="ev-sev s${n.severity}">S${n.severity}</span>
+        </div>
+        <span class="ev-time">${timeStr}</span>
       </div>
       <div class="news-headline"><a href="${escHtml(n.url)}" target="_blank" rel="noopener">${escHtml(n.title)}</a></div>
-      ${n.description ? `<div class="news-desc">${escHtml(n.description.slice(0,160))}…</div>` : ''}
-      <div class="news-meta">
-        <span class="news-src">${escHtml(n.source)}</span>
-        <span class="ev-time">${timeStr}</span>
+      <div class="news-meta mts-meta">
+        <span class="news-src">📍 ${escHtml(n.source)}</span>
       </div>`;
     return card;
   }
