@@ -18,7 +18,7 @@ const CHAT = (() => {
   const FIREBASE_CONFIG = {
     apiKey:            "AIzaSyDAqGGMLNl8ZWDPPeCEL0QmC6JkLe0vo6c",
     authDomain:        "infoperhour-labs.firebaseapp.com",
-    databaseURL:       "https://infoperhour-labs-default-rtdb.firebaseio.com",
+    databaseURL:       "https://infoperhour-labs-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId:         "infoperhour-labs",
     storageBucket:     "infoperhour-labs.firebasestorage.app",
     messagingSenderId: "434764649923",
