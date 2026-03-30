@@ -236,6 +236,25 @@
   const lp = $('left-panel');
   const rp = $('right-panel');
 
+  if (leafletMap) {
+    leafletMap.on('click', () => {
+      if (window.innerWidth <= 800) {
+        lp.classList.remove('open');
+        rp.classList.remove('open');
+        if (btnMenu) btnMenu.classList.remove('active');
+        if (btnChat) btnChat.classList.remove('active');
+      }
+    });
+    leafletMap.on('dragstart', () => {
+      if (window.innerWidth <= 800) {
+        lp.classList.remove('open');
+        rp.classList.remove('open');
+        if (btnMenu) btnMenu.classList.remove('active');
+        if (btnChat) btnChat.classList.remove('active');
+      }
+    });
+  }
+
   if (btnMenu) {
     btnMenu.addEventListener('click', () => {
       if (rp.classList.contains('open')) {

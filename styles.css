@@ -39,6 +39,7 @@
 
 html, body {
   height: 100%;
+  height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -53,7 +54,7 @@ html, body {
 
 /* ── UTILITIES ─────────────────────────────────────────────────────── */
 .dim-txt  { color: var(--muted); font-size: 10px; }
-button    { cursor: pointer; outline: none; }
+button    { cursor: pointer; outline: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
 /* ═════════════════ TOP BAR ════════════════════════════════════════ */
 #topbar {
@@ -215,7 +216,7 @@ button    { cursor: pointer; outline: none; }
 .sevbtn.active.s5 { background: rgba(239,68,68,.12); }
 
 /* feeds */
-.feed-scroll { flex: 1; overflow-y: auto; }
+.feed-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .feed-spinner {
   display: flex; flex-direction: column; align-items: center;
   gap: 10px; padding: 36px 20px;
@@ -539,7 +540,9 @@ button    { cursor: pointer; outline: none; }
 #mobile-nav {
   display: none;
   position: fixed; bottom: 0; left: 0; right: 0;
-  height: 50px; background: rgba(7,9,15,.98);
+  height: calc(50px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(7,9,15,.98);
   border-top: 1px solid var(--border);
   z-index: 1000;
   backdrop-filter: blur(14px);
@@ -557,7 +560,7 @@ button    { cursor: pointer; outline: none; }
 @media (max-width: 800px) {
   #layout {
     display: block;
-    height: calc(100vh - var(--topbar-h) - 50px);
+    height: calc(100dvh - var(--topbar-h) - calc(50px + env(safe-area-inset-bottom, 0px)));
   }
 
   #mobile-nav {
@@ -571,7 +574,7 @@ button    { cursor: pointer; outline: none; }
   #left-panel, #right-panel {
     position: fixed;
     top: var(--topbar-h);
-    bottom: 50px;
+    bottom: calc(50px + env(safe-area-inset-bottom, 0px));
     width: 320px;
     max-width: 90vw;
     z-index: 900;
