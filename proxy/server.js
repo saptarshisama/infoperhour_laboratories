@@ -23,23 +23,57 @@ app.use(express.json());
 // ════════════════════════════════════════════════════════════════════
 
 const RSS_FEEDS = [
-  // Conflict / War / Military
-  { url: 'https://news.google.com/rss/search?q=war+conflict+military+airstrike+troops+attack&hl=en-US&gl=US&ceid=US:en', source: 'Google News', cat: 'conflict' },
-  { url: 'https://news.google.com/rss/search?q=ceasefire+assault+siege+bombardment+offensive&hl=en-US&gl=US&ceid=US:en', source: 'Google News', cat: 'conflict' },
-  // Political / Geopolitical
-  { url: 'https://news.google.com/rss/search?q=sanctions+diplomacy+coup+protest+NATO+UN+crisis&hl=en-US&gl=US&ceid=US:en', source: 'Google News', cat: 'political' },
-  // Disasters / Natural
-  { url: 'https://news.google.com/rss/search?q=earthquake+flood+hurricane+cyclone+wildfire+tsunami&hl=en-US&gl=US&ceid=US:en', source: 'Google News', cat: 'disaster' },
-  // Humanitarian
-  { url: 'https://news.google.com/rss/search?q=refugees+famine+aid+humanitarian+displacement+UNHCR&hl=en-US&gl=US&ceid=US:en', source: 'Google News', cat: 'humanitarian' },
-  // Economic
-  { url: 'https://news.google.com/rss/search?q=global+economy+trade+sanctions+tariff+inflation+bank&hl=en-US&gl=US&ceid=US:en', source: 'Google News', cat: 'economic' },
-  // World news broadsheets
-  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml',           source: 'BBC World',    cat: null },
-  { url: 'https://www.aljazeera.com/xml/rss/all.xml',              source: 'Al Jazeera',  cat: null },
-  { url: 'https://feeds.skynews.com/feeds/rss/world.rss',          source: 'Sky News',    cat: null },
-  { url: 'https://rss.dw.com/rss/en-all',                          source: 'DW News',     cat: null },
-  { url: 'https://www.france24.com/en/rss',                        source: 'France 24',   cat: null },
+  // ── Google News keyword searches (conflict/geo/disaster buckets) ────
+  { url: 'https://news.google.com/rss/search?q=war+conflict+military+airstrike+troops+attack&hl=en-US&gl=US&ceid=US:en',            source: 'Google News', cat: 'conflict' },
+  { url: 'https://news.google.com/rss/search?q=ceasefire+assault+siege+bombardment+offensive&hl=en-US&gl=US&ceid=US:en',            source: 'Google News', cat: 'conflict' },
+  { url: 'https://news.google.com/rss/search?q=sanctions+diplomacy+coup+protest+NATO+UN+crisis&hl=en-US&gl=US&ceid=US:en',          source: 'Google News', cat: 'political' },
+  { url: 'https://news.google.com/rss/search?q=earthquake+flood+hurricane+cyclone+wildfire+tsunami&hl=en-US&gl=US&ceid=US:en',      source: 'Google News', cat: 'disaster' },
+  { url: 'https://news.google.com/rss/search?q=refugees+famine+aid+humanitarian+displacement+UNHCR&hl=en-US&gl=US&ceid=US:en',      source: 'Google News', cat: 'humanitarian' },
+  { url: 'https://news.google.com/rss/search?q=global+economy+trade+sanctions+tariff+inflation+bank&hl=en-US&gl=US&ceid=US:en',     source: 'Google News', cat: 'economic' },
+
+  // ── US Broadcast Networks (mirror of MTS live TV sources) ──────────
+  { url: 'https://feeds.nbcnews.com/nbcnews/public/world',                   source: 'NBC News',    cat: null },
+  { url: 'https://rss.cnn.com/rss/edition_world.rss',                        source: 'CNN',         cat: null },
+  { url: 'https://www.cbsnews.com/latest/rss/world',                         source: 'CBS News',    cat: null },
+  { url: 'https://abcnews.go.com/abcnews/internationalheadlines',             source: 'ABC News',    cat: null },
+  { url: 'https://feeds.foxnews.com/foxnews/world',                          source: 'Fox News',    cat: null },
+  { url: 'https://www.newsmax.com/rss/Politics/1/',                           source: 'Newsmax',     cat: 'political' },
+  { url: 'https://feeds.bloomberg.com/politics/news.rss',                    source: 'Bloomberg',   cat: 'political' },
+
+  // ── International Broadcasters (mirror of MTS live TV sources) ─────
+  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml',                      source: 'BBC World',   cat: null },
+  { url: 'https://www.aljazeera.com/xml/rss/all.xml',                        source: 'Al Jazeera',  cat: null },
+  { url: 'https://www.france24.com/en/rss',                                  source: 'France 24',   cat: null },
+  { url: 'https://rss.dw.com/rss/en-all',                                    source: 'DW News',     cat: null },
+  { url: 'https://feeds.skynews.com/feeds/rss/world.rss',                    source: 'Sky News',    cat: null },
+  { url: 'https://www3.nhk.or.jp/rss/news/cat0.xml',                         source: 'NHK World',   cat: null },
+  { url: 'https://www.i24news.tv/en/rss',                                    source: 'i24 News',    cat: null },
+  { url: 'https://www.iranintl.com/en/rss.xml',                              source: 'Iran Intl',   cat: null },
+
+  // ── Wire services & aggregators ─────────────────────────────────────
+  { url: 'https://feeds.reuters.com/reuters/worldNews',                      source: 'Reuters',     cat: null },
+  { url: 'https://apnews.com/rss/world-news',                                source: 'AP News',     cat: null },
+  { url: 'https://www.theguardian.com/world/rss',                            source: 'The Guardian',cat: null },
+  { url: 'https://www.euronews.com/rss',                                     source: 'Euronews',    cat: null },
+  { url: 'https://www.rfi.fr/en/rss',                                        source: 'RFI',         cat: null },
+
+  // ── Defence / Conflict specialists ──────────────────────────────────
+  { url: 'https://www.defensenews.com/arc/outboundfeeds/rss/',               source: 'Defense News',cat: 'conflict' },
+  { url: 'https://www.janes.com/feeds/news',                                 source: 'Janes',       cat: 'conflict' },
+  { url: 'https://www.militarytimes.com/arc/outboundfeeds/rss/',             source: 'Military Times', cat: 'conflict' },
+  { url: 'https://taskandpurpose.com/feed/',                                  source: 'Task & Purpose', cat: 'conflict' },
+
+  // ── Region-specific wires ────────────────────────────────────────────
+  { url: 'https://www.timesofisrael.com/feed/',                              source: 'Times of Israel', cat: null },
+  { url: 'https://english.alarabiya.net/tools/rss',                          source: 'Al Arabiya',  cat: null },
+  { url: 'https://www.kyivindependent.com/feed/',                            source: 'Kyiv Independent', cat: 'conflict' },
+  { url: 'https://www.themoscowtimes.com/rss/news',                          source: 'Moscow Times',cat: null },
+  { url: 'https://timesofindia.indiatimes.com/rssfeeds/296589292.cms',       source: 'Times of India', cat: null },
+  { url: 'https://www.scmp.com/rss/91/feed',                                 source: 'SCMP',        cat: null },
+
+  // ── Disaster / Climate ───────────────────────────────────────────────
+  { url: 'https://reliefweb.int/updates/rss.xml',                            source: 'ReliefWeb',   cat: 'humanitarian' },
+  { url: 'https://www.gdacs.org/xml/rss.xml',                                source: 'GDACS',       cat: 'disaster' },
 ];
 
 const CONFLICT_KEYWORDS   = /\b(war|attack|killed|dead|troops|military|missile|bomb|airstrike|strike|assault|offensive|conflict|ceasefire|siege|battle|fighting|gunfire|explosion|troops|navy|forces|weapons|drone)\b/i;
