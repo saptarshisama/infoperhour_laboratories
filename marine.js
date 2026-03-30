@@ -1,35 +1,30 @@
 /**
- * marine.js — Live Ship Tracking
- * Primary:  AISStream WebSocket direct from browser (wss://stream.aisstream.io)
- * Fallback: VesselFinder public JSON REST (no key, CORS-proxied via allorigins)
- * Tracks: military (type 35) + tankers (type 80-89)
+ * marine.js — Live Ship Tracking via Proxy SSE
+ * The proxy connects to AISStream WebSocket server-side and streams
+ * positions to the browser via SSE — bypassing browser WS key exposure
+ * and the AISStream free-tier connection limits.
+ *
+ * Fallback: proxy /api/ships/snapshot REST poll every 30s
  */
 
 const MARINE = (() => {
 
-  const AISSTREAM_KEY = '51f6b11dedd877efde399bbefee7080759837543';
-
-  let leafletMap    = null;
-  let enabled       = false;
-  let ws            = null;
-  let reconnectTimer = null;
+  let leafletMap     = null;
+  let enabled        = false;
+  let evtSource      = null;
+  let pollInterval   = null;
   let prunerInterval = null;
+  let reconnectTimer = null;
   const markers  = new Map(); // MMSI → L.circleMarker
   const allShips = new Map(); // MMSI → ship data
 
   const STYLES = {
-    military: { color: '#a78bfa', radius: 3 },
-    tanker:   { color: '#ef4444', radius: 2.5 },
-    other:    { color: '#64748b', radius: 2 },
+    military: { color: '#a78bfa', radius: 3.5 },
+    tanker:   { color: '#ef4444', radius: 3   },
+    other:    { color: '#64748b', radius: 2   },
   };
 
   function getStyle(cat) { return STYLES[cat] || STYLES.other; }
-
-  function shipCat(type) {
-    if (type === 35)                 return 'military';
-    if (type >= 80 && type <= 89)    return 'tanker';
-    return 'other';
-  }
 
   function tooltipHtml(ship) {
     const s  = getStyle(ship.cat);
@@ -92,117 +87,78 @@ const MARINE = (() => {
     }
   }
 
-  // ── Primary: AISStream WebSocket (browser-direct) ──────────────────
-  function connectAISStream() {
+  // ── Primary: SSE stream from proxy ─────────────────────────────────
+  function connectSSE() {
     if (!enabled) return;
-    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+    if (evtSource) { evtSource.close(); evtSource = null; }
 
-    console.log('[Marine] Connecting to AISStream…');
-    ws = new WebSocket('wss://stream.aisstream.io/v0/stream');
+    console.log('[Marine] Connecting to proxy SSE…');
+    evtSource = new EventSource(`${CONFIG.PROXY_URL}/api/ais/stream`);
 
-    ws.onopen = () => {
-      console.log('[Marine] AISStream connected');
-      ws.send(JSON.stringify({
-        APIKey: AISSTREAM_KEY,
-        BoundingBoxes: [[[-90, -180], [90, 180]]],
-        FilterMessageTypes: ['PositionReport'],
-      }));
+    evtSource.onopen = () => {
+      console.log('[Marine] SSE connected');
+      clearInterval(pollInterval); // SSE is working, stop REST polling
       document.getElementById('marine-status')?.setAttribute('data-status', 'connected');
     };
 
-    ws.onmessage = e => {
+    evtSource.onmessage = e => {
       if (!enabled) return;
       try {
-        const msg = JSON.parse(e.data);
-        if (!msg.Message?.PositionReport) return;
-        const pr   = msg.Message.PositionReport;
-        const meta = msg.MetaData || {};
-        if (pr.Latitude == null || pr.Longitude == null) return;
-        if (Math.abs(pr.Latitude) > 90 || Math.abs(pr.Longitude) > 180) return;
-
-        const type = meta.ShipType || 0;
-        const cat  = shipCat(type);
-        if (cat === 'other') return; // only military + tankers
-
-        const mmsi = String(meta.MMSI || pr.UserID || 0);
-        const ship = {
-          mmsi,
-          name:    (meta.ShipName || '').trim() || mmsi,
-          lat:     pr.Latitude,
-          lon:     pr.Longitude,
-          heading: pr.TrueHeading !== 511 ? pr.TrueHeading : (pr.CourseOverGround || 0),
-          speed:   pr.SpeedOverGround || 0,
-          status:  pr.NavigationalStatus,
-          type, cat,
-          ts:      Date.now(),
-        };
-        allShips.set(mmsi, ship);
-
-        // Live-update existing marker without waiting for render cycle
-        if (markers.has(mmsi)) {
-          markers.get(mmsi).setLatLng([ship.lat, ship.lon]);
+        const data = JSON.parse(e.data);
+        if (data.type === 'snapshot') {
+          data.ships.forEach(s => allShips.set(String(s.mmsi), { ...s, ts: Date.now() }));
+          renderVisible();
+        } else if (data.mmsi) {
+          allShips.set(String(data.mmsi), { ...data, ts: Date.now() });
+          if (markers.has(String(data.mmsi))) {
+            markers.get(String(data.mmsi)).setLatLng([data.lat, data.lon]);
+          }
         }
       } catch { /* ignore parse errors */ }
     };
 
-    ws.onclose = (e) => {
-      console.warn(`[Marine] AISStream disconnected (${e.code}), reconnecting in 10s…`);
-      ws = null;
-      document.getElementById('marine-status')?.setAttribute('data-status', 'disconnected');
+    evtSource.onerror = () => {
+      console.warn('[Marine] SSE error — switching to REST poll fallback');
+      evtSource?.close();
+      evtSource = null;
+      document.getElementById('marine-status')?.setAttribute('data-status', 'fallback');
       if (enabled) {
+        startRESTFallback();
+        // Try reconnecting SSE after 30s
         clearTimeout(reconnectTimer);
-        reconnectTimer = setTimeout(connectAISStream, 10000);
+        reconnectTimer = setTimeout(connectSSE, 30000);
       }
-    };
-
-    ws.onerror = () => {
-      console.error('[Marine] AISStream WebSocket error — falling back to REST');
-      ws?.close();
-      if (enabled) fetchVesselFinderFallback();
     };
   }
 
-  // ── Fallback: VesselFinder / VesselTracker public JSON ─────────────
-  // Uses the aisstream REST endpoint for a one-shot snapshot if WS fails
-  async function fetchVesselFinderFallback() {
+  // ── Fallback: REST snapshot poll from proxy ─────────────────────────
+  async function fetchSnapshot() {
     if (!enabled) return;
-    console.log('[Marine] Trying AISStream REST fallback…');
     try {
-      // Fetch military vessel snapshot via a CORS proxy around a public AIS REST endpoint
-      const url = 'https://api.vesselfinder.com/vessels?userkey=demo&mmsi=all';
-      // If VesselFinder demo doesn't work, use open aisstream snapshot endpoint
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://www.myshiptracking.com/requests/vesselsonmap.php?type=json&minlat=-90&maxlat=90&minlon=-180&maxlon=180&zoom=3')}`;
-      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
-      if (!res.ok) throw new Error(`REST fallback HTTP ${res.status}`);
-      const wrapper = await res.json();
-      const data    = JSON.parse(wrapper.contents || '[]');
-      const ships   = Array.isArray(data) ? data : (data.vessels || data.data || []);
-      ships.slice(0, 2000).forEach(v => {
-        const mmsi = String(v.mmsi || v.MMSI || v.id || Math.random());
-        const type = parseInt(v.type || v.shiptype || 0);
-        const cat  = shipCat(type);
-        if (cat === 'other') return;
-        allShips.set(mmsi, {
-          mmsi, cat, type,
-          name:    v.name || v.NAME || mmsi,
-          lat:     parseFloat(v.lat || v.LAT),
-          lon:     parseFloat(v.lon || v.LON || v.lng),
-          heading: parseFloat(v.heading || v.COG || 0),
-          speed:   parseFloat(v.speed || v.SOG || 0),
-          ts:      Date.now(),
-        });
-      });
-      renderVisible();
+      const res  = await fetch(`${CONFIG.PROXY_URL}/api/ships/snapshot`, { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const ships = await res.json();
+      if (Array.isArray(ships)) {
+        ships.forEach(s => allShips.set(String(s.mmsi), { ...s, ts: Date.now() }));
+        renderVisible();
+        console.log(`[Marine] REST snapshot: ${ships.length} ships`);
+      }
     } catch (e) {
-      console.error('[Marine] REST fallback failed:', e.message);
+      console.warn('[Marine] REST snapshot failed:', e.message);
     }
+  }
+
+  function startRESTFallback() {
+    clearInterval(pollInterval);
+    fetchSnapshot();
+    pollInterval = setInterval(fetchSnapshot, 30000);
   }
 
   function enable(map) {
     leafletMap     = map;
     enabled        = true;
     leafletMap.on('moveend', renderVisible);
-    connectAISStream();
+    connectSSE();
     prunerInterval = setInterval(renderVisible, 3000);
   }
 
@@ -210,9 +166,10 @@ const MARINE = (() => {
     enabled = false;
     leafletMap?.off('moveend', renderVisible);
     clearTimeout(reconnectTimer);
+    clearInterval(pollInterval);
     clearInterval(prunerInterval);
-    ws?.close();
-    ws = null;
+    evtSource?.close();
+    evtSource = null;
     markers.forEach(m => leafletMap?.removeLayer(m));
     markers.clear();
     allShips.clear();

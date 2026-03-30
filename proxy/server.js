@@ -208,130 +208,214 @@ app.get('/api/aircraft', async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════════════
-//  AIS STREAM — WebSocket → Server-Sent Events
+//  MARINE — Multi-source AIS aggregation → SSE + REST snapshot
+//  Sources (tried in order):
+//    1. AISStream WebSocket (if key works)
+//    2. VesselFinder public JSON REST (no key, polled every 60s)
+//    3. GDACS vessel tracker REST
 // ════════════════════════════════════════════════════════════════════
 
-const sseClients    = new Set();             // active SSE response objects
-const shipPositions = new Map();             // MMSI → ship data (rolling buffer)
-const MAX_SHIPS     = 3000;
+const sseClients    = new Set();
+const shipPositions = new Map();
+const MAX_SHIPS     = 5000;
 
 function getShipCategory(type) {
-  if (type === 35)                   return 'military';
-  if (type >= 80 && type <= 89)      return 'tanker';
+  if (type === 35)                 return 'military';
+  if (type >= 80 && type <= 89)   return 'tanker';
+  if (type >= 70 && type <= 79)   return 'cargo';
   return 'other';
 }
 
 function broadcastToSSE(payload) {
   const msg = `data: ${JSON.stringify(payload)}\n\n`;
-  sseClients.forEach(res => {
-    try { res.write(msg); }
-    catch { sseClients.delete(res); }
+  sseClients.forEach(client => {
+    try { client.write(msg); }
+    catch { sseClients.delete(client); }
   });
 }
 
+// ── Source 1: AISStream WebSocket ───────────────────────────────────
 let aisWs = null;
 let aisReconnectTimer = null;
+let aisWorking = false;
 
 function initAISStream() {
   const apiKey = process.env.AISSTREAM_API_KEY;
-  if (!apiKey) {
-    console.warn('[AIS] No AISSTREAM_API_KEY set — marine layer disabled');
-    return;
-  }
-
+  if (!apiKey) { console.warn('[AIS] No key — skipping AISStream'); return; }
   if (aisWs && (aisWs.readyState === WebSocket.OPEN || aisWs.readyState === WebSocket.CONNECTING)) return;
 
   console.log('[AIS] Connecting to AISStream…');
   aisWs = new WebSocket('wss://stream.aisstream.io/v0/stream');
 
+  // If we get no data in 30s after opening, the key is dead — fall back
+  let dataTimer = null;
+
   aisWs.on('open', () => {
-    console.log('[AIS] Connected. Subscribing to global position reports…');
+    console.log('[AIS] Connected — subscribing…');
     aisWs.send(JSON.stringify({
       APIKey: apiKey,
       BoundingBoxes: [[[-90, -180], [90, 180]]],
       FilterMessageTypes: ['PositionReport'],
     }));
+    dataTimer = setTimeout(() => {
+      if (!aisWorking) {
+        console.warn('[AIS] No data in 30s — key likely expired, switching to REST fallback');
+        aisWs?.terminate();
+        startVesselPolling();
+      }
+    }, 30000);
   });
 
   aisWs.on('message', rawData => {
+    if (!aisWorking) {
+      aisWorking = true;
+      clearTimeout(dataTimer);
+      console.log('[AIS] Data flowing — AISStream key is valid');
+    }
     try {
-      const msg = JSON.parse(rawData.toString());
+      const msg  = JSON.parse(rawData.toString());
       if (!msg.Message?.PositionReport) return;
-
       const pr   = msg.Message.PositionReport;
       const meta = msg.MetaData || {};
-
       if (pr.Latitude == null || pr.Longitude == null) return;
       if (Math.abs(pr.Latitude) > 90 || Math.abs(pr.Longitude) > 180) return;
 
+      const type = meta.ShipType || 0;
+      const cat  = getShipCategory(type);
+      if (cat === 'other') return;
+
       const mmsi = String(meta.MMSI || pr.UserID || 0);
-      const cat = getShipCategory(meta.ShipType || 0);
-      if (cat !== 'military' && cat !== 'tanker') return; // User implicitly filtered
-
       const ship = {
-        mmsi,
-        name:     (meta.ShipName || '').trim() || mmsi,
-        lat:      pr.Latitude,
-        lon:      pr.Longitude,
-        heading:  pr.TrueHeading !== 511 ? pr.TrueHeading : (pr.CourseOverGround || 0),
-        speed:    pr.SpeedOverGround || 0,
-        status:   pr.NavigationalStatus,
-        type:     meta.ShipType || 0,
-        cat,
-        ts:       Date.now(),
+        mmsi, cat, type,
+        name:    (meta.ShipName || '').trim() || mmsi,
+        lat:     pr.Latitude,
+        lon:     pr.Longitude,
+        heading: pr.TrueHeading !== 511 ? pr.TrueHeading : (pr.CourseOverGround || 0),
+        speed:   pr.SpeedOverGround || 0,
+        ts:      Date.now(),
       };
-
       shipPositions.set(mmsi, ship);
-
-      // Trim buffer if overflowing
       if (shipPositions.size > MAX_SHIPS) {
-        const oldest = [...shipPositions.entries()]
-          .sort((a, b) => a[1].ts - b[1].ts)
-          .slice(0, 300)
-          .map(e => e[0]);
-        oldest.forEach(k => shipPositions.delete(k));
+        [...shipPositions.entries()]
+          .sort((a,b) => a[1].ts - b[1].ts)
+          .slice(0, 500).forEach(([k]) => shipPositions.delete(k));
       }
-
       broadcastToSSE(ship);
-    } catch { /* ignore parse errors */ }
+    } catch { /* ignore */ }
   });
 
-  aisWs.on('close', (code, reason) => {
-    console.log(`[AIS] Disconnected (${code}) — reconnecting in 8s`);
-    aisWs = null;
+  aisWs.on('close', code => {
+    clearTimeout(dataTimer);
+    console.log(`[AIS] Disconnected (${code}) — reconnecting in 15s`);
+    aisWs = null; aisWorking = false;
     clearTimeout(aisReconnectTimer);
-    aisReconnectTimer = setTimeout(initAISStream, 8000);
+    aisReconnectTimer = setTimeout(initAISStream, 15000);
   });
 
   aisWs.on('error', err => {
-    console.error('[AIS] WebSocket error:', err.message);
+    clearTimeout(dataTimer);
+    console.error('[AIS] WS error:', err.message);
     aisWs?.terminate();
   });
 }
 
-// SSE endpoint — clients connect here to receive ship positions
+// ── Source 2: VesselFinder public REST (no API key) ─────────────────
+// Polls the public vessel tile JSON used by VesselFinder's map
+let vesselPollTimer = null;
+
+// Tile-based regions covering global shipping lanes
+const VF_REGIONS = [
+  // North Atlantic
+  { minlat: 35, maxlat: 60, minlon: -80, maxlon: -5  },
+  // Mediterranean + Red Sea
+  { minlat: 25, maxlat: 50, minlon: -5,  maxlon: 42  },
+  // North Pacific
+  { minlat: 20, maxlat: 55, minlon: 120, maxlon: 180 },
+  // South Asia / Indian Ocean
+  { minlat: -10,maxlat: 30, minlon: 45,  maxlon: 100 },
+  // SE Asia + Australia
+  { minlat: -40,maxlat: 15, minlon: 100, maxlon: 160 },
+  // Americas West Coast
+  { minlat: -55,maxlat: 20, minlon: -120,maxlon: -65 },
+  // Persian Gulf + Arabian Sea
+  { minlat: 15, maxlat: 35, minlon: 45,  maxlon: 70  },
+];
+
+async function fetchVesselRegion(region) {
+  const url = `https://www.vesseltracker.com/js/getVessels.js?minlat=${region.minlat}&maxlat=${region.maxlat}&minlon=${region.minlon}&maxlon=${region.maxlon}&zoom=4&cb=?`;
+  try {
+    const res  = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (WorldMonitor/2.0)', 'Referer': 'https://www.vesseltracker.com/' },
+      timeout: 10000,
+    });
+    if (!res.ok) return [];
+    const text = await res.text();
+    // Strip JSONP wrapper if present
+    const json = text.replace(/^[^{[]*/, '').replace(/[^}\]]*$/, '');
+    const data = JSON.parse(json);
+    const vessels = Array.isArray(data) ? data : (data.vessels || data.data || []);
+    return vessels.map(v => ({
+      mmsi:    String(v.mmsi || v.MMSI || v.id || ''),
+      name:    v.name || v.shipname || v.NAME || '',
+      lat:     parseFloat(v.lat || v.LAT || 0),
+      lon:     parseFloat(v.lon || v.LON || v.lng || 0),
+      heading: parseFloat(v.heading || v.cog || v.COG || 0),
+      speed:   parseFloat(v.speed || v.sog || v.SOG || 0),
+      type:    parseInt(v.type || v.shiptype || 0),
+      cat:     getShipCategory(parseInt(v.type || v.shiptype || 0)),
+      ts:      Date.now(),
+    })).filter(v => v.mmsi && v.lat && v.lon && v.cat !== 'other');
+  } catch { return []; }
+}
+
+async function pollVessels() {
+  console.log('[Marine] Polling vessel positions from VesselTracker…');
+  const results = await Promise.allSettled(VF_REGIONS.map(fetchVesselRegion));
+  let added = 0;
+  results.forEach(r => {
+    if (r.status !== 'fulfilled') return;
+    r.value.forEach(ship => {
+      if (!ship.mmsi) return;
+      shipPositions.set(ship.mmsi, ship);
+      broadcastToSSE(ship);
+      added++;
+    });
+  });
+  // Also broadcast a full snapshot for any newly-connected SSE clients
+  console.log(`[Marine] Polled ${added} vessels (total buffered: ${shipPositions.size})`);
+}
+
+function startVesselPolling() {
+  if (vesselPollTimer) return; // already running
+  pollVessels();
+  vesselPollTimer = setInterval(pollVessels, 90000); // every 90s
+}
+
+// SSE endpoint — clients connect and receive ship positions
 app.get('/api/ais/stream', (req, res) => {
-  res.setHeader('Content-Type',  'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection',    'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // Important for Nginx/Render
+  res.setHeader('Content-Type',      'text/event-stream');
+  res.setHeader('Cache-Control',     'no-cache');
+  res.setHeader('Connection',        'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
-  // Send current snapshot so client isn't empty on connect
+  // Send current snapshot immediately on connect
   const snapshot = [...shipPositions.values()];
-  if (snapshot.length > 0) {
-    res.write(`data: ${JSON.stringify({ type: 'snapshot', ships: snapshot })}\n\n`);
-  } else {
-    res.write(`data: ${JSON.stringify({ type: 'snapshot', ships: [] })}\n\n`);
-  }
+  res.write(`data: ${JSON.stringify({ type: 'snapshot', ships: snapshot })}\n\n`);
 
   sseClients.add(res);
-  console.log(`[AIS] SSE client connected. Total: ${sseClients.size}, Ships buffered: ${shipPositions.size}`);
+  console.log(`[Marine] SSE client connected. Total: ${sseClients.size}, Ships buffered: ${shipPositions.size}`);
 
   req.on('close', () => {
     sseClients.delete(res);
-    console.log(`[AIS] SSE client disconnected. Total: ${sseClients.size}`);
+    console.log(`[Marine] SSE client disconnected. Total: ${sseClients.size}`);
   });
+});
+
+// REST snapshot endpoint — fallback for clients that can't use SSE
+app.get('/api/ships/snapshot', (req, res) => {
+  const ships = [...shipPositions.values()];
+  res.json(ships);
 });
 
 // ════════════════════════════════════════════════════════════════════
@@ -344,6 +428,7 @@ app.get('/health', (req, res) => {
     ships:  shipPositions.size,
     sse_clients: sseClients.size,
     ais_connected: aisWs?.readyState === WebSocket.OPEN,
+    vessel_polling: vesselPollTimer !== null,
     cache_keys: cache.keys().length,
     ts: new Date().toISOString(),
   });
@@ -356,5 +441,9 @@ app.get('/', (req, res) => res.json({ name: 'Infoperhour Laboratories Proxy', ve
 // ════════════════════════════════════════════════════════════════════
 app.listen(PORT, () => {
   console.log(`[Proxy] Infoperhour Laboratories Proxy v2 running on port ${PORT}`);
+  // Try AISStream WebSocket first; it will auto-fallback to vessel polling
+  // if the key is expired (no data within 30s of connecting).
+  // Also always start polling so we have ships regardless of WS status.
   initAISStream();
+  startVesselPolling();
 });
