@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Infoperhour Laboratories — Global Intelligence</title>
-  <meta name="description" content="Real-time intelligence platform tracking global events." />
+  <meta name="description" content="Real-time global intelligence platform." />
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -16,7 +16,7 @@
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -38,7 +38,7 @@
   <div id="ticker-wrap">
     <span id="ticker-tag">INTEL</span>
     <div id="ticker-clip">
-      <div id="ticker-text">Initialising intelligence feed…</div>
+      <div id="ticker-text">Initialising global intelligence feed…</div>
     </div>
   </div>
 
@@ -48,11 +48,11 @@
       <span id="online-num">1</span><span class="dim-txt">online</span>
     </div>
     <div class="tb-stat" id="aircraft-wrap" title="Aircraft tracked">
-      <span style="font-size:10px">✈</span>
+      <span style="font-size:10px;color:var(--cyan-dim)">✈</span>
       <span id="aircraft-count">—</span>
     </div>
     <div class="tb-stat" id="ships-wrap" title="Ships tracked">
-      <span style="font-size:10px">⛵</span>
+      <span style="font-size:10px;color:var(--cyan-dim)">⛵</span>
       <span id="ship-count">—</span>
     </div>
     <div id="utc-wrap">
@@ -70,7 +70,7 @@
     <div class="panel-hdr">
       <div class="panel-tabs">
         <button class="ptab active" id="tab-events" data-tab="events">⬡ EVENTS</button>
-        <button class="ptab" id="tab-news" data-tab="news">📡 NEWS FEED</button>
+        <button class="ptab" id="tab-news" data-tab="news">📡 INTEL FEED</button>
       </div>
     </div>
 
@@ -84,26 +84,16 @@
         <button class="fbtn disaster" data-cat="disaster">DISASTER</button>
         <button class="fbtn economic" data-cat="economic">ECONOMIC</button>
       </div>
-      <div class="filter-row" id="sev-row">
-        <span class="dim-txt" style="font-size:9px">SEV</span>
-        <button class="sevbtn active" data-sev="all">ALL</button>
-        <button class="sevbtn s1" data-sev="1">S1</button>
-        <button class="sevbtn s2" data-sev="2">S2</button>
-        <button class="sevbtn s3" data-sev="3">S3</button>
-        <button class="sevbtn s4" data-sev="4">S4</button>
-        <button class="sevbtn s5" data-sev="5">S5</button>
-      </div>
     </div>
 
     <!-- News tab filters -->
     <div id="news-filters" class="filter-area" style="display:none">
       <div class="filter-row">
         <button class="fbtn active" data-ncat="all">ALL</button>
-        <button class="fbtn conflict" data-ncat="conflict">CONFLICT</button>
-        <button class="fbtn political" data-ncat="political">POLITICAL</button>
-        <button class="fbtn humanitarian" data-ncat="humanitarian">HUMAN.</button>
-        <button class="fbtn disaster" data-ncat="disaster">DISASTER</button>
-        <button class="fbtn economic" data-ncat="economic">ECONOMIC</button>
+        <button class="fbtn conflict" data-ncat="conflict">WAR</button>
+        <button class="fbtn political" data-ncat="political">GEOPOLITICS</button>
+        <button class="fbtn economic" data-ncat="economic">FINANCE</button>
+        <button class="fbtn disaster" data-ncat="disaster">CRISIS</button>
       </div>
     </div>
 
@@ -112,7 +102,7 @@
       <div class="feed-spinner"><div class="spinner"></div><span>Querying OSINT sources…</span></div>
     </div>
     <div id="news-feed" class="feed-scroll" style="display:none">
-      <div class="feed-spinner"><div class="spinner"></div><span>Loading news feeds…</span></div>
+      <div class="feed-spinner"><div class="spinner"></div><span>Loading intelligence feeds…</span></div>
     </div>
 
     <!-- Legend -->
@@ -131,18 +121,18 @@
 
     <!-- Map top bar -->
     <div id="map-topbar">
-      <span id="map-coords">HOVER FOR COORDINATES</span>
-      <button id="reset-btn">⊕ RESET</button>
+      <span id="map-coords">GRID REF: — / —</span>
+      <button id="reset-btn">⊕ RESET VIEW</button>
     </div>
 
-    <!-- Overlay control panel (floats over map, bottom-left) -->
+    <!-- Overlay control panel -->
     <div id="overlay-panel">
       <div id="overlay-hdr">
-        <span id="overlay-title">OVERLAYS</span>
+        <span id="overlay-title">SYS OVERLAYS</span>
         <button id="overlay-collapse">▼</button>
       </div>
       <div id="overlay-body">
-        <div class="ovl-section-title">DATA LAYERS</div>
+        <div class="ovl-section-title">EVENT LAYERS</div>
         <label class="ovl-row">
           <input type="checkbox" id="tog-events" checked />
           <span class="ovl-dot conflict"></span>
@@ -156,41 +146,59 @@
           <span class="ovl-count" id="ovlc-quakes"></span>
         </label>
         <label class="ovl-row">
+          <input type="checkbox" id="tog-weather" />
+          <span style="font-size:10px;color:#60a5fa">⛈</span>
+          <span class="ovl-label">Weather</span>
+          <span class="ovl-count" id="ovlc-weather"></span>
+        </label>
+
+        <div class="ovl-section-title" style="margin-top:8px">LIVE TRACKING</div>
+        <label class="ovl-row">
           <input type="checkbox" id="tog-aviation" />
-          <span style="font-size:10px">✈</span>
-          <span class="ovl-label">Aviation</span>
+          <span style="font-size:10px;color:var(--cyan)">✈</span>
+          <span class="ovl-label">Aviation (Mil)</span>
           <span class="ovl-count" id="ovlc-aviation">—</span>
         </label>
         <label class="ovl-row">
           <input type="checkbox" id="tog-marine" />
-          <span style="font-size:10px">⛵</span>
+          <span style="font-size:10px;color:#60a5fa">⛵</span>
           <span class="ovl-label">Marine AIS</span>
           <span class="ovl-count" id="ovlc-marine">—</span>
         </label>
+
+        <div class="ovl-section-title" style="margin-top:8px">INFRASTRUCTURE</div>
         <label class="ovl-row">
-          <input type="checkbox" id="tog-weather" />
-          <span style="font-size:10px">⛈</span>
-          <span class="ovl-label">Weather</span>
-          <span class="ovl-count" id="ovlc-weather"></span>
+          <input type="checkbox" id="tog-cables" />
+          <span style="font-size:10px;color:#f59e0b">〰</span>
+          <span class="ovl-label">Submarine Cables</span>
+          <span class="ovl-count" id="ovlc-cables"></span>
+        </label>
+        <label class="ovl-row">
+          <input type="checkbox" id="tog-datacenters" />
+          <span style="font-size:10px;color:#a78bfa">◈</span>
+          <span class="ovl-label">Data Centers</span>
+          <span class="ovl-count" id="ovlc-datacenters"></span>
         </label>
 
         <div class="ovl-section-title" style="margin-top:8px">SHIP TYPES</div>
         <div class="ship-legend">
           <span><span style="color:#ef4444">●</span> Tanker</span>
           <span><span style="color:#a78bfa">●</span> Military</span>
+          <span><span style="color:#60a5fa">●</span> Cargo</span>
+          <span><span style="color:#64748b">●</span> Other</span>
         </div>
 
         <div class="ovl-section-title" style="margin-top:8px">AIRCRAFT ALT</div>
         <div class="ship-legend">
-          <span><span style="color:#22d3ee">●</span> High >10km</span>
-          <span><span style="color:#60a5fa">●</span> Mid 5-10km</span>
-          <span><span style="color:#f59e0b">●</span> Low 1-5km</span>
+          <span><span style="color:#22d3ee">●</span> &gt;10km</span>
+          <span><span style="color:#60a5fa">●</span> 5-10km</span>
+          <span><span style="color:#f59e0b">●</span> 1-5km</span>
           <span><span style="color:#ef4444">●</span> &lt;1km</span>
         </div>
       </div>
     </div>
 
-    <div id="source-tag">GDELT · USGS · ReliefWeb · ADSB (Mil) · AISStream · Open-Meteo</div>
+    <div id="source-tag">GDELT · USGS · ReliefWeb · ADSB.lol · OpenSky · Open-Meteo · TeleGeography · Cloudscene</div>
   </main>
 
   <!-- ─── RIGHT: Chat ──────────────────────────────────────────────── -->
@@ -204,7 +212,7 @@
       <div id="typing-row" style="display:none"><span id="typing-txt"></span></div>
       <div id="input-row">
         <div id="user-badge">—</div>
-        <input id="chat-in" type="text" placeholder="Send intel report…" maxlength="280" autocomplete="off"/>
+        <input id="chat-in" type="text" placeholder="Transmit intel report…" maxlength="280" autocomplete="off"/>
         <button id="send-btn">➤</button>
       </div>
     </div>
@@ -212,9 +220,9 @@
     <div id="name-modal">
       <div id="name-box">
         <div class="modal-title">IDENTIFY YOURSELF</div>
-        <div class="modal-sub">Provide your credentials to join the secure network</div>
-        <input id="email-in" type="email" placeholder="Enter email address…" autocomplete="off" />
-        <input id="name-in" type="text" placeholder="Enter callsign…" maxlength="20" autocomplete="off" />
+        <div class="modal-sub">Credentials required to access secure network</div>
+        <input id="email-in" type="email" placeholder="Email address…" autocomplete="off" />
+        <input id="name-in" type="text" placeholder="Callsign…" maxlength="20" autocomplete="off" />
         <button id="name-confirm">CONNECT</button>
       </div>
     </div>
@@ -224,8 +232,8 @@
 
 <!-- ═══ MOBILE NAVIGATION ════════════════════════════════════════════ -->
 <div id="mobile-nav">
-  <button id="btn-menu">🗂️ Feed</button>
-  <button id="btn-chat">💬 Chat</button>
+  <button id="btn-menu">⬡ FEED</button>
+  <button id="btn-chat">💬 CHAT</button>
 </div>
 
 <!-- ═══ EVENT DETAIL POPUP ═══════════════════════════════════════════ -->
@@ -243,9 +251,8 @@
 </div>
 
 <script>
-// ── Global Config — Permanently linked to cloud proxy ──────────────
 window.CONFIG = {
-  PROXY_URL: 'https://infoperhour-proxy.onrender.com', 
+  PROXY_URL: 'https://infoperhour-proxy.onrender.com',
 };
 </script>
 
@@ -254,6 +261,8 @@ window.CONFIG = {
 <script src="aviation.js"></script>
 <script src="marine.js"></script>
 <script src="weather.js"></script>
+<script src="cables.js"></script>
+<script src="datacenters.js"></script>
 <script src="chat.js"></script>
 <script src="app.js"></script>
 
