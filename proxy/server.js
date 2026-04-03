@@ -496,6 +496,27 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => res.json({ name: 'Infoperhour Laboratories Proxy', version: '2.0.0' }));
 
 // ════════════════════════════════════════════════════════════════════
+//  PIZZA INDEX — Pentagon Pizza Index proxy
+// ════════════════════════════════════════════════════════════════════
+app.get('/api/pizza', async (req, res) => {
+  const cached = cache.get('pizza');
+  if (cached) return res.json(cached);
+  try {
+    const r = await fetch('https://www.pizzint.watch/api/dashboard-data', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (WorldMonitor/2.0)' },
+      timeout: 12000,
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    cache.set('pizza', data, 600); // cache 10 min
+    res.json(data);
+  } catch (e) {
+    console.warn('[Pizza] Proxy fetch failed:', e.message);
+    res.status(502).json({ error: e.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════
 //  START
 // ════════════════════════════════════════════════════════════════════
 app.listen(PORT, () => {

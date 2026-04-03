@@ -23,6 +23,9 @@
   // ── Map init ──────────────────────────────────────────────────────────
   const leafletMap = MAP.init();
 
+  // Wake proxy (Render free tier may be sleeping)
+  fetch(`${CONFIG.PROXY_URL}/health`).catch(() => {});
+
   // ── Chat ──────────────────────────────────────────────────────────────
   CHAT.init();
 

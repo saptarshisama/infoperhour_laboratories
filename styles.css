@@ -433,9 +433,9 @@ button   { cursor: pointer; outline: none; touch-action: manipulation; -webkit-t
   display: flex; align-items: center; justify-content: center;
   font-family: var(--mono); font-size: 8px; font-weight: 700; color: #000;
 }
-.cuname { font-size: 11px; font-weight: 600; font-family: var(--mono); }
+.cuname { font-size: 11px; font-weight: 600; font-family: var(--font); }
 .cts    { font-family: var(--mono); font-size: 9px; color: var(--muted); margin-left: auto; }
-.cbody  { font-size: 12px; line-height: 1.5; padding-left: 24px; word-break: break-word; color: var(--text); }
+.cbody  { font-size: 12px; line-height: 1.5; padding-left: 24px; word-break: break-word; color: var(--text); font-family: var(--font); }
 .csys   { font-family: var(--mono); font-size: 9px; color: var(--muted); text-align: center; font-style: italic; padding: 2px; }
 
 #chat-bottom { padding: 7px 9px; border-top: 1px solid var(--border); flex-shrink: 0; }

@@ -18,6 +18,7 @@ const MAP = (() => {
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter_nolabels/{z}/{x}/{y}{r}.png', {
       subdomains: 'abcd', maxZoom: 20,
+      attribution: '© CARTO'
     }).addTo(leafletMap);
 
     evtLayer = L.layerGroup().addTo(leafletMap);

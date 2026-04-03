@@ -22,14 +22,19 @@ const PIZZA = (() => {
 
   // ── Fetch ────────────────────────────────────────────────────────────
   async function fetchData() {
-    try {
-      const res = await fetch(API_URL, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
-    } catch (e) {
-      console.warn('[Pizza] Fetch failed:', e.message);
-      return null;
+    const proxyUrl = (window.CONFIG?.PROXY_URL || '') + '/api/pizza';
+    const directUrl = 'https://www.pizzint.watch/api/dashboard-data';
+    for (const url of [proxyUrl, directUrl]) {
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json && (json.success || json.defcon_level != null)) return json;
+      } catch (e) {
+        console.warn('[Pizza] Fetch failed:', url, e.message);
+      }
     }
+    return null;
   }
 
   // ── Render ───────────────────────────────────────────────────────────
