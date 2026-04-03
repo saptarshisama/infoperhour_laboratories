@@ -26,6 +26,9 @@
   // ── Chat ──────────────────────────────────────────────────────────────
   CHAT.init();
 
+  // ── Pizza Index ───────────────────────────────────────────────────────
+  PIZZA.init();
+
   // ── Tab switching ─────────────────────────────────────────────────────
   document.querySelectorAll('.ptab').forEach(btn => {
     btn.addEventListener('click', () => {

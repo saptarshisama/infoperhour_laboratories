@@ -16,7 +16,7 @@
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -199,6 +199,31 @@
     </div>
 
     <div id="source-tag">GDELT · USGS · ReliefWeb · ADSB.lol · OpenSky · Open-Meteo · TeleGeography · Cloudscene</div>
+
+    <!-- ═══ PIZZA TRACKER WIDGET ═════════════════════════════════════ -->
+    <div id="pizza-widget">
+      <div id="pizza-hdr">
+        <span id="pizza-hdr-label">🍕 Pentagon Pizza Index</span>
+        <button id="pizza-min" title="Minimize">−</button>
+      </div>
+      <div id="pizza-body">
+        <div id="pizza-defcon-row">
+          <span id="pizza-defcon-label">DEFCON</span>
+          <span id="pizza-defcon-val">—</span>
+          <span id="pizza-freshness">—</span>
+        </div>
+        <div id="pizza-bar-row">
+          <div id="pizza-bar-wrap"><div id="pizza-bar" style="width:0%"></div></div>
+          <span id="pizza-idx-label">—/100</span>
+        </div>
+        <div id="pizza-spikes"></div>
+        <div id="pizza-sparkline-wrap">
+          <div id="pizza-sparkline-label">24H ACTIVITY</div>
+          <canvas id="pizza-sparkline" width="258" height="36"></canvas>
+        </div>
+        <div id="pizza-ts">Loading…</div>
+      </div>
+    </div>
   </main>
 
   <!-- ─── RIGHT: Chat ──────────────────────────────────────────────── -->
@@ -263,6 +288,7 @@ window.CONFIG = {
 <script src="weather.js"></script>
 <script src="cables.js"></script>
 <script src="datacenters.js"></script>
+<script src="pizza.js"></script>
 <script src="chat.js"></script>
 <script src="app.js"></script>
 
