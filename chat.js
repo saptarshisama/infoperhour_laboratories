@@ -173,15 +173,10 @@ const CHAT = (() => {
     // Register user details silently
     registryRef.update({ email: email, last_seen: Date.now() });
 
-    presenceRef.set({ online: true, ts: Date.now() });
+    // Replace anon presence entry with named one (same count, named identity)
+    presenceRef.set({ online: true, ts: Date.now(), name: username });
     presenceRef.onDisconnect().remove();
     typingRef.onDisconnect().remove();
-
-    // Online counter
-    db.ref('chat/presence').on('value', snap => {
-      const el = $('online-num');
-      if (el) el.textContent = snap.numChildren();
-    });
 
     // Typing indicators
     db.ref('chat/typing').on('value', snap => {
@@ -263,9 +258,26 @@ const CHAT = (() => {
     else runDemo();
   }
 
+  // ── Anonymous presence (fires immediately on page load) ───────────────
+  // Uses a random session ID so every tab/visitor is counted before chat login
+  function initPresence() {
+    if (!isFirebase || !db) return;
+    const sessionId = Math.random().toString(36).slice(2);
+    const anonRef   = db.ref(`chat/presence/__anon_${sessionId}`);
+    anonRef.set({ online: true, ts: Date.now() });
+    anonRef.onDisconnect().remove();
+
+    // Watch the full presence node and update the counter
+    db.ref('chat/presence').on('value', snap => {
+      const el = document.getElementById('online-num');
+      if (el) el.textContent = snap.numChildren();
+    });
+  }
+
   // ── Public init ───────────────────────────────────────────────────────
   function init() {
     tryFirebase();
+    initPresence();   // count this visitor immediately, no login required
     promptUsername();
   }
 

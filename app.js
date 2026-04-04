@@ -96,6 +96,10 @@
     const ovl = $('ovlc-refineries');
     if (ovl) ovl.textContent = e.target.checked ? REFINERIES.count() : '';
   });
+  $('tog-pizza')?.addEventListener('change', e => {
+    const widget = $('pizza-widget');
+    if (widget) widget.style.display = e.target.checked ? '' : 'none';
+  });
 
   // View Mode section collapse
   $('viewmode-hdr')?.addEventListener('click', () => {
@@ -117,14 +121,70 @@
     $('theme-dark').classList.remove('active');
   });
 
-  // 3D Globe / Flat Map toggle (opens Cesium globe in new tab if 3D selected)
+  // ── 3D Globe / Flat Map toggle ────────────────────────────────────────
+  let globeInstance = null;
+
+  function initGlobe() {
+    if (globeInstance) return;
+    const container = $('globe-container');
+    if (!container || typeof Globe === 'undefined') return;
+
+    globeInstance = Globe()(container)
+      .globeImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg')
+      .bumpImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png')
+      .backgroundColor('#080c14')
+      .showAtmosphere(true)
+      .atmosphereColor('#0af0c0')
+      .atmosphereAltitude(0.12)
+      .showGraticule(true);
+
+    // Size to container
+    const mp = $('map-panel');
+    if (mp) {
+      globeInstance.width(mp.clientWidth).height(mp.clientHeight);
+    }
+
+    // Plot current events as points
+    const evts = EVENTS.getAll().filter(e => e.lat && e.lon);
+    globeInstance
+      .pointsData(evts)
+      .pointLat('lat')
+      .pointLng('lon')
+      .pointColor(e => {
+        const cats = EVENTS.getCategories();
+        return (cats[e.category] || cats.political).color;
+      })
+      .pointAltitude(0.01)
+      .pointRadius(0.4)
+      .pointLabel(e => `<div style="font-family:monospace;font-size:12px;color:#0af0c0"><b>${e.headline}</b><br/>${e.location}</div>`);
+
+    console.log('[Globe] Initialized with', evts.length, 'event points');
+  }
+
+  function switchToGlobe() {
+    $('map').style.display = 'none';
+    $('globe-container').style.display = 'block';
+    initGlobe();
+    // Move map-topbar and overlay above the globe
+    const mapTopbar = $('map-topbar');
+    const overlayPanel = $('overlay-panel');
+    if (mapTopbar) mapTopbar.style.zIndex = '1100';
+    if (overlayPanel) overlayPanel.style.zIndex = '1100';
+  }
+
+  function switchToFlat() {
+    $('map').style.display = '';
+    $('globe-container').style.display = 'none';
+    const mapTopbar = $('map-topbar');
+    const overlayPanel = $('overlay-panel');
+    if (mapTopbar) mapTopbar.style.zIndex = '';
+    if (overlayPanel) overlayPanel.style.zIndex = '';
+  }
+
   document.querySelectorAll('input[name="mapview"]').forEach(radio => {
     radio.addEventListener('change', () => {
-      if (radio.value === 'globe' && radio.checked) {
-        window.open('https://cesiumjs.org/Cesium/Build/Apps/CesiumViewer/', '_blank');
-        // Revert radio to flat after opening — we don't actually switch the map
-        setTimeout(() => { $('view-flat').checked = true; }, 200);
-      }
+      if (radio.value === 'globe' && radio.checked) switchToGlobe();
+      else if (radio.value === 'flat' && radio.checked) switchToFlat();
     });
   });
 
@@ -174,7 +234,7 @@
 
     // Only show RED ALERT badge for S4/S5 — no severity label otherwise
     const alertBadge = ev.severity >= 4
-      ? `<span class="ev-alert-red">${ev.severity >= 5 ? '🔴 RED ALERT' : '⚠ HIGH ALERT'}</span>`
+      ? `<span class="ev-alert-red">${ev.severity >= 5 ? 'RED ALERT' : 'HIGH ALERT'}</span>`
       : '';
 
     const icon = ev.icon ? `${ev.icon} ` : '';
@@ -230,7 +290,7 @@
 
     // Only show RED ALERT for high-severity news
     const alertBadge = n.severity >= 4
-      ? `<span class="ev-alert-red">${n.severity >= 5 ? '🔴 RED ALERT' : '⚠ HIGH ALERT'}</span>`
+      ? `<span class="ev-alert-red">${n.severity >= 5 ? 'RED ALERT' : 'HIGH ALERT'}</span>`
       : '';
 
     card.innerHTML = `
@@ -254,19 +314,19 @@
     const conflictEvents = events
       .filter(e => e.category === 'conflict' && e.severity >= 3)
       .slice(0, 6)
-      .map(e => `🔴 ${e.headline.toUpperCase()} — ${e.location}`);
+      .map(e => `[CONFLICT] ${e.headline.toUpperCase()} — ${e.location}`);
 
     const highSevEvents = events
       .filter(e => e.category !== 'conflict' && e.severity >= 4)
       .slice(0, 4)
-      .map(e => `⚡ ${e.headline} — ${e.location}`);
+      .map(e => `[ALERT] ${e.headline} — ${e.location}`);
 
     const topNews = news
       .filter(n => n.severity >= 3 && (n.category === 'conflict' || n.category === 'political' || n.category === 'economic'))
       .slice(0, 8)
       .map(n => {
-        const prefix = n.category === 'conflict' ? '💥' : n.category === 'economic' ? '📈' : '🌐';
-        return `${prefix} ${n.title} [${n.source}]`;
+        const prefix = n.category === 'conflict' ? '[WAR]' : n.category === 'economic' ? '[MARKETS]' : '[INTEL]';
+        return `${prefix} ${n.title} — ${n.source}`;
       });
 
     const all = [...conflictEvents, ...highSevEvents, ...topNews];
@@ -289,13 +349,35 @@
     $('events-feed').innerHTML = '<div class="feed-spinner"><span style="color:var(--red)">Feed unavailable — check console</span></div>';
   }
 
-  // Auto-refresh every 5 min
+  // ── Auto-refresh every 2 min with countdown ──────────────────────────
+  const REFRESH_SECS = 120;
+  let refreshCountdown = REFRESH_SECS;
+
+  // Countdown shown in event-count-wrap area
+  const countdownEl = document.createElement('span');
+  countdownEl.id = 'refresh-countdown';
+  countdownEl.title = 'Next feed refresh';
+  const evWrap = $('event-count-wrap');
+  if (evWrap) evWrap.after(countdownEl);
+
+  setInterval(() => {
+    refreshCountdown--;
+    if (countdownEl) countdownEl.textContent = `↻ ${refreshCountdown}s`;
+    if (refreshCountdown <= 0) refreshCountdown = REFRESH_SECS;
+  }, 1000);
+
   setInterval(async () => {
+    refreshCountdown = REFRESH_SECS;
     try {
       const { mapEvents, newsItems } = await EVENTS.fetchAll();
       renderEvents(); renderNews(); updateTicker(mapEvents, newsItems);
+      // Update globe points if visible
+      if (globeInstance && $('globe-container').style.display !== 'none') {
+        const evts = EVENTS.getAll().filter(e => e.lat && e.lon);
+        globeInstance.pointsData(evts);
+      }
     } catch (e) { console.warn('[APP] Refresh failed:', e); }
-  }, 5 * 60 * 1000);
+  }, REFRESH_SECS * 1000);
 
   // ── Mobile Navigation ─────────────────────────────────────────────────
   const btnMenu = $('btn-menu'), btnChat = $('btn-chat');

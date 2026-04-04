@@ -294,19 +294,31 @@ const CABLES = (() => {
 
     CABLE_DATA.forEach((cable, i) => {
       const color = cable.color || CABLE_COLORS[i % CABLE_COLORS.length];
+
+      // Glow shadow layer (wider, very transparent) — renders under the cable line
+      const glow = L.polyline(cable.path, {
+        color,
+        weight: 6,
+        opacity: 0.18,
+        smoothFactor: 1.5,
+        interactive: false,
+      });
+      cableGroup.addLayer(glow);
+
+      // Core cable line (thin, bright)
       const line = L.polyline(cable.path, {
         color,
-        weight: 1.8,
-        opacity: 0.65,
+        weight: 2.2,
+        opacity: 0.85,
         className: 'cable-line',
-        smoothFactor: 2,
+        smoothFactor: 1.5,
         interactive: true,
       });
       line.bindTooltip(
         `<div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7">
-          <strong style="color:${color}">${cable.name}</strong><br/>
-          Owner: ${cable.owner}<br/>
-          Capacity: ${cable.capacity}
+          <strong style="color:${color}">〰 ${cable.name}</strong><br/>
+          <span style="color:#94a3b8">Owner:</span> ${cable.owner}<br/>
+          <span style="color:#94a3b8">Capacity:</span> <span style="color:#0af0c0">${cable.capacity}</span>
         </div>`,
         { direction: 'top', className: 'wm-tooltip', opacity: 1, sticky: true }
       );
@@ -314,18 +326,18 @@ const CABLES = (() => {
       layers.push(line);
     });
 
-    // Landing station markers
+    // Landing station markers — square terminal style
     LANDING_POINTS.forEach(lp => {
-      const size = Math.min(6 + lp.cables * 0.6, 14);
+      const size = Math.min(5 + lp.cables * 0.5, 12);
       const icon = L.divIcon({
         className: '',
         html: `<div style="
           width:${size}px;height:${size}px;
-          border-radius:50%;
           background:#f59e0b;
-          border:1.5px solid rgba(255,179,0,0.8);
-          box-shadow:0 0 ${size}px rgba(245,158,11,0.7);
+          border:1px solid rgba(255,220,100,0.9);
+          box-shadow:0 0 6px rgba(245,158,11,0.9), 0 0 14px rgba(245,158,11,0.4);
           cursor:pointer;
+          transform:rotate(45deg);
         "></div>`,
         iconSize:   [size, size],
         iconAnchor: [size/2, size/2],

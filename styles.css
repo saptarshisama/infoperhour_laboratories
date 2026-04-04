@@ -109,6 +109,7 @@ button   { cursor: pointer; outline: none; touch-action: manipulation; -webkit-t
 }
 #event-count-wrap { display: flex; align-items: center; gap: 4px; }
 #event-count { font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--amber); }
+#refresh-countdown { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 0.5px; margin-left: 4px; }
 
 /* ticker */
 #ticker-wrap {
