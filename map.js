@@ -16,10 +16,24 @@ const MAP = (() => {
       preferCanvas: true
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter_nolabels/{z}/{x}/{y}.png', {
+    // Primary: CARTO dark matter (no labels)
+    const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter_nolabels/{z}/{x}/{y}.png', {
       subdomains: 'abcd', maxZoom: 20,
-      attribution: '© CARTO'
-    }).addTo(leafletMap);
+      attribution: '© CARTO',
+      errorTileUrl: '',
+    });
+    tileLayer.addTo(leafletMap);
+
+    // Fallback: if CARTO tiles fail, switch to Stadia dark
+    tileLayer.on('tileerror', function() {
+      if (this._fallbackApplied) return;
+      this._fallbackApplied = true;
+      console.warn('[Map] CARTO tiles failing, switching to Stadia fallback');
+      leafletMap.removeLayer(tileLayer);
+      L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+        maxZoom: 20, attribution: '© Stadia Maps'
+      }).addTo(leafletMap);
+    });
 
     evtLayer = L.layerGroup().addTo(leafletMap);
 
