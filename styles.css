@@ -79,7 +79,13 @@ button   { cursor: pointer; outline: none; touch-action: manipulation; -webkit-t
 
 #tb-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
-#brand { display: flex; align-items: center; gap: 7px; }
+#brand { display: flex; align-items: center; gap: 7px; flex-direction: column; align-items: flex-start; gap: 1px; }
+#brand-credit {
+  font-size: 9px; color: var(--text-dim); text-decoration: none;
+  letter-spacing: 0.5px; line-height: 1; margin-left: 20px;
+  transition: color 0.2s;
+}
+#brand-credit:hover { color: var(--accent); }
 #brand-name {
   font-family: var(--font); font-size: 11px; font-weight: 700;
   letter-spacing: 1.5px; color: var(--accent);
@@ -359,6 +365,46 @@ button   { cursor: pointer; outline: none; touch-action: manipulation; -webkit-t
   letter-spacing: 1.5px; color: var(--text-dim);
   margin-bottom: 5px; margin-top: 2px; text-transform: uppercase;
 }
+.ovl-collapsible:hover { color: var(--accent); }
+#viewmode-body { padding: 2px 0 4px; }
+#viewmode-body.hidden { display: none; }
+.view-radio-label {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; color: var(--text); cursor: pointer;
+  padding: 2px 6px; border-radius: 3px;
+  border: 1px solid var(--border); transition: border-color 0.15s;
+}
+.view-radio-label:hover { border-color: var(--accent); }
+.view-radio-label input { accent-color: var(--accent); }
+.theme-btn {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.5px;
+  padding: 2px 7px; border-radius: 3px; cursor: pointer;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-dim); transition: all 0.15s;
+}
+.theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+.theme-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(10,240,192,0.06); }
+
+/* ── Light Theme ──────────────────────────────────────────────────────── */
+body.theme-light {
+  --bg:         #f0f4f8;
+  --bg-panel:   rgba(240,244,248,0.98);
+  --bg-card:    rgba(255,255,255,0.95);
+  --bg-hover:   rgba(0,120,90,0.05);
+  --bg-glass:   rgba(0,120,90,0.03);
+  --border:     rgba(0,100,80,0.15);
+  --border-hi:  rgba(0,100,80,0.3);
+  --border-act: rgba(0,100,80,0.55);
+  --accent:     #007850;
+  --accent-dim: #005a3c;
+  --text:        #1a2e38;
+  --text-bright: #0d1e28;
+  --text-dim:    #5a7888;
+  --muted:       #8aabb8;
+  background: var(--bg);
+}
+body.theme-light #topbar { background: rgba(240,244,248,0.98); border-bottom-color: rgba(0,100,80,0.15); }
+body.theme-light .leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(1.1); }
 .ovl-row {
   display: flex; align-items: center; gap: 8px;
   padding: 3px 2px; cursor: pointer;
@@ -542,6 +588,11 @@ button   { cursor: pointer; outline: none; touch-action: manipulation; -webkit-t
 #pizza-hdr-label {
   font-size: 9px; font-weight: 600; letter-spacing: 1.5px;
   color: var(--accent); text-transform: uppercase;
+}
+#pizza-live-badge {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  color: #ef4444; flex: 1;
 }
 #pizza-min {
   background: transparent; border: none;

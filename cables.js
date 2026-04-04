@@ -6,9 +6,10 @@
 
 const CABLES = (() => {
 
-  let leafletMap = null;
-  let enabled    = false;
-  const layers   = []; // L.polyline instances
+  let leafletMap   = null;
+  let enabled      = false;
+  let cableGroup   = null; // L.layerGroup — persists through zoom
+  const layers     = [];
   const landingMarkers = [];
 
   // Major submarine cables with real approximate routes
@@ -288,15 +289,18 @@ const CABLES = (() => {
 
   function render() {
     if (!enabled || !leafletMap) return;
+    // Use a LayerGroup so all cable lines persist through zoom/pan
+    if (!cableGroup) cableGroup = L.layerGroup().addTo(leafletMap);
 
     CABLE_DATA.forEach((cable, i) => {
       const color = cable.color || CABLE_COLORS[i % CABLE_COLORS.length];
       const line = L.polyline(cable.path, {
         color,
-        weight: 1.5,
-        opacity: 0.55,
+        weight: 1.8,
+        opacity: 0.65,
         className: 'cable-line',
-        smoothFactor: 1,
+        smoothFactor: 2,
+        interactive: true,
       });
       line.bindTooltip(
         `<div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7">
@@ -304,9 +308,9 @@ const CABLES = (() => {
           Owner: ${cable.owner}<br/>
           Capacity: ${cable.capacity}
         </div>`,
-        { direction: 'top', className: 'wm-tooltip', opacity: 1 }
+        { direction: 'top', className: 'wm-tooltip', opacity: 1, sticky: true }
       );
-      line.addTo(leafletMap);
+      cableGroup.addLayer(line);
       layers.push(line);
     });
 
@@ -335,7 +339,7 @@ const CABLES = (() => {
         </div>`,
         { direction: 'top', className: 'wm-tooltip', opacity: 1 }
       );
-      m.addTo(leafletMap);
+      cableGroup.addLayer(m);
       landingMarkers.push(m);
     });
 
@@ -344,7 +348,7 @@ const CABLES = (() => {
 
   function disable() {
     enabled = false;
-    layers.forEach(l => leafletMap?.removeLayer(l));
+    if (cableGroup) { leafletMap?.removeLayer(cableGroup); cableGroup = null; }
     layers.length = 0;
     landingMarkers.forEach(m => leafletMap?.removeLayer(m));
     landingMarkers.length = 0;

@@ -91,6 +91,42 @@
     const ovl = $('ovlc-datacenters');
     if (ovl) ovl.textContent = e.target.checked ? DATACENTERS.count() : '';
   });
+  $('tog-refineries')?.addEventListener('change', e => {
+    if (e.target.checked) REFINERIES.enable(leafletMap); else REFINERIES.disable();
+    const ovl = $('ovlc-refineries');
+    if (ovl) ovl.textContent = e.target.checked ? REFINERIES.count() : '';
+  });
+
+  // View Mode section collapse
+  $('viewmode-hdr')?.addEventListener('click', () => {
+    const body  = $('viewmode-body');
+    const arrow = $('viewmode-arrow');
+    body.classList.toggle('hidden');
+    if (arrow) arrow.textContent = body.classList.contains('hidden') ? '▶' : '▼';
+  });
+
+  // Dark / Light theme toggle
+  $('theme-dark')?.addEventListener('click', () => {
+    document.body.classList.remove('theme-light');
+    $('theme-dark').classList.add('active');
+    $('theme-light').classList.remove('active');
+  });
+  $('theme-light')?.addEventListener('click', () => {
+    document.body.classList.add('theme-light');
+    $('theme-light').classList.add('active');
+    $('theme-dark').classList.remove('active');
+  });
+
+  // 3D Globe / Flat Map toggle (opens Cesium globe in new tab if 3D selected)
+  document.querySelectorAll('input[name="mapview"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (radio.value === 'globe' && radio.checked) {
+        window.open('https://cesiumjs.org/Cesium/Build/Apps/CesiumViewer/', '_blank');
+        // Revert radio to flat after opening — we don't actually switch the map
+        setTimeout(() => { $('view-flat').checked = true; }, 200);
+      }
+    });
+  });
 
   // Overlay collapse
   $('overlay-collapse')?.addEventListener('click', () => {
@@ -214,14 +250,28 @@
 
   // ── Ticker ────────────────────────────────────────────────────────────
   function updateTicker(events, news) {
-    const all = [
-      ...events.filter(e => e.severity >= 3).slice(0,8).map(e =>
-        `[${(CATS[e.category]||CATS.political).label.toUpperCase()}] ${e.headline} — ${e.location}`),
-      ...news.filter(n => n.severity >= 3).slice(0,8).map(n =>
-        `[${(CATS[n.category]||CATS.political).label.toUpperCase()}] ${n.title} — ${n.source}`),
-    ];
+    // Priority: conflict S4-5 first, then high-sev events, then top news
+    const conflictEvents = events
+      .filter(e => e.category === 'conflict' && e.severity >= 3)
+      .slice(0, 6)
+      .map(e => `🔴 ${e.headline.toUpperCase()} — ${e.location}`);
+
+    const highSevEvents = events
+      .filter(e => e.category !== 'conflict' && e.severity >= 4)
+      .slice(0, 4)
+      .map(e => `⚡ ${e.headline} — ${e.location}`);
+
+    const topNews = news
+      .filter(n => n.severity >= 3 && (n.category === 'conflict' || n.category === 'political' || n.category === 'economic'))
+      .slice(0, 8)
+      .map(n => {
+        const prefix = n.category === 'conflict' ? '💥' : n.category === 'economic' ? '📈' : '🌐';
+        return `${prefix} ${n.title} [${n.source}]`;
+      });
+
+    const all = [...conflictEvents, ...highSevEvents, ...topNews];
     const el = $('ticker-text');
-    if (el && all.length) el.textContent = all.map(t => `  ◆  ${t}`).join('   ');
+    if (el && all.length) el.textContent = all.map(t => `  ◆  ${t}`).join('     ');
   }
 
   // ── Initial data load ─────────────────────────────────────────────────

@@ -28,6 +28,7 @@
     <div id="brand">
       <span id="brand-pulse"></span>
       <span id="brand-name">INFOPERHOUR LABORATORIES</span>
+      <a id="brand-credit" href="https://x.com/saptarshisama" target="_blank" rel="noopener">Made by Saptarshi Samanta</a>
     </div>
     <div id="live-badge"><span class="pdot red"></span>LIVE</div>
     <div id="event-count-wrap">
@@ -69,8 +70,8 @@
   <aside id="left-panel">
     <div class="panel-hdr">
       <div class="panel-tabs">
-        <button class="ptab" id="tab-events" data-tab="events">⬡ EVENTS</button>
         <button class="ptab active" id="tab-news" data-tab="news">📡 INTEL FEED</button>
+        <button class="ptab" id="tab-events" data-tab="events">⬡ EVENTS</button>
       </div>
     </div>
 
@@ -170,7 +171,7 @@
         <label class="ovl-row">
           <input type="checkbox" id="tog-cables" />
           <span style="font-size:10px;color:#f59e0b">〰</span>
-          <span class="ovl-label">Submarine Cables</span>
+          <span class="ovl-label">Submarine Comms Cables</span>
           <span class="ovl-count" id="ovlc-cables"></span>
         </label>
         <label class="ovl-row">
@@ -179,6 +180,36 @@
           <span class="ovl-label">Data Centers</span>
           <span class="ovl-count" id="ovlc-datacenters"></span>
         </label>
+        <label class="ovl-row">
+          <input type="checkbox" id="tog-refineries" />
+          <span style="font-size:10px;color:#f97316">⬡</span>
+          <span class="ovl-label">Oil Refineries (Top 50)</span>
+          <span class="ovl-count" id="ovlc-refineries"></span>
+        </label>
+
+        <!-- VIEW MODE (retractable) -->
+        <div class="ovl-section-title ovl-collapsible" id="viewmode-hdr" style="margin-top:8px;cursor:pointer">
+          VIEW MODE <span id="viewmode-arrow">▼</span>
+        </div>
+        <div id="viewmode-body">
+          <div class="ovl-row" style="padding:2px 0;gap:4px;flex-wrap:wrap">
+            <label class="view-radio-label">
+              <input type="radio" name="mapview" id="view-flat" value="flat" checked />
+              <span>🗺 Flat Map</span>
+            </label>
+            <label class="view-radio-label">
+              <input type="radio" name="mapview" id="view-globe" value="globe" />
+              <span>🌐 3D Globe</span>
+            </label>
+          </div>
+          <div class="ovl-row" style="padding:2px 0;justify-content:space-between;align-items:center">
+            <span class="ovl-label" style="font-size:10px">THEME</span>
+            <div style="display:flex;gap:4px">
+              <button class="theme-btn active" id="theme-dark" title="Dark mode">◑ Dark</button>
+              <button class="theme-btn" id="theme-light" title="Light mode">◐ Light</button>
+            </div>
+          </div>
+        </div>
 
         <div class="ovl-section-title" style="margin-top:8px">SHIP TYPES</div>
         <div class="ship-legend">
@@ -204,6 +235,7 @@
     <div id="pizza-widget">
       <div id="pizza-hdr">
         <span id="pizza-hdr-label">🍕 Pentagon Pizza Index</span>
+        <span id="pizza-live-badge"><span class="pdot red"></span>LIVE</span>
         <button id="pizza-min" title="Minimize">−</button>
       </div>
       <div id="pizza-body">
@@ -288,6 +320,7 @@ window.CONFIG = {
 <script src="weather.js"></script>
 <script src="cables.js"></script>
 <script src="datacenters.js"></script>
+<script src="refineries.js"></script>
 <script src="pizza.js"></script>
 <script src="chat.js"></script>
 <script src="app.js"></script>
