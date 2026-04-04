@@ -35,9 +35,9 @@ const MAP = (() => {
       }).addTo(leafletMap);
     });
 
-    // Custom pane for cables — z-index below tiles so they render behind land
+    // Custom pane for cables — above tiles (200) but below markers/overlay (400+)
     leafletMap.createPane('cablesPane');
-    leafletMap.getPane('cablesPane').style.zIndex = 150; // tiles are 200, so cables go under
+    leafletMap.getPane('cablesPane').style.zIndex = 250;
 
     evtLayer = L.layerGroup().addTo(leafletMap);
 

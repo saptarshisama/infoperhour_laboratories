@@ -64,7 +64,8 @@ const RSS_FEEDS = [
   { url: 'https://www.ft.com/rss/home/international',                        source: 'FT',          cat: 'economic' },
   { url: 'https://fortune.com/feed/',                                         source: 'Fortune',     cat: 'economic' },
   { url: 'https://www.wsj.com/xml/rss/3_7085.xml',                           source: 'WSJ World',   cat: null },
-  { url: 'https://feeds.marketwatch.com/marketwatch/topstories/',            source: 'MarketWatch', cat: 'economic' },
+  // MarketWatch removed — too many opinion/personal finance articles
+  // { url: 'https://feeds.marketwatch.com/marketwatch/topstories/',            source: 'MarketWatch', cat: 'economic' },
 
   // ── International Broadcasters ─────────────────────────────────────
   { url: 'https://feeds.bbci.co.uk/news/world/rss.xml',                      source: 'BBC World',   cat: null },
@@ -112,6 +113,21 @@ function isEnglish(text) {
   if (!text || text.length < 3) return true;
   const nonLatin = (text.match(/[^\x00-\x7F\u00C0-\u024F\u1E00-\u1EFF]/g) || []).length;
   return nonLatin / text.length < 0.12;
+}
+
+// Reject opinion pieces, lifestyle articles, advice columns, and personal finance fluff
+// Keep only hard news: events, deals, policy, conflicts, disasters, data-driven market moves
+const OPINION_REJECT = /\b(opinion|editorial|column|commentary|review|podcast|quiz|recipe|horoscope|crossword)\b/i;
+const LIFESTYLE_REJECT = /\b(how (to|do|can|should)|tips for|ways to|best .{2,20} for|what (to|you) (know|need|should|can)|guide to|things you|mistakes|lessons|habits|I'm \d+|I have|I feel|my (husband|wife|kids|family|retirement)|do I need|should (I|you)|is it (too late|time|worth|ok|okay|unethical|ethical)|what happens (when|if|to)|ask a|dear |advice|top \d+ (ways|things|tips|reasons))\b/i;
+const FLUFF_REJECT = /\b(incredible power|surprising reason|you won't believe|jaw.?dropping|game.?changing|mind.?blowing|here'?s (why|what|how)|this is (why|what|how))\b/i;
+const PERSONAL_FINANCE_REJECT = /\b(401\(k\)|IRA|retirement (plan|saving|account)|social security (benefits?|check)|mortgage rate|credit (score|card)|savings account|CD rate|APY|how much (should|do|can|to)|afford|nest egg|tax (return|refund|bracket|tip)|estate planning)\b/i;
+
+function isHardNews(title) {
+  if (OPINION_REJECT.test(title)) return false;
+  if (LIFESTYLE_REJECT.test(title)) return false;
+  if (FLUFF_REJECT.test(title)) return false;
+  if (PERSONAL_FINANCE_REJECT.test(title)) return false;
+  return true;
 }
 
 function classifyArticle(title, description, feedCat) {
@@ -168,7 +184,7 @@ async function fetchSingleRSS(feed) {
         category: classifyArticle(title, desc, feed.cat),
         severity: severityFromTitle(title),
       };
-    }).filter(item => isEnglish(item.title));
+    }).filter(item => isEnglish(item.title) && isHardNews(item.title));
   } catch (e) {
     console.warn(`[News] ${feed.source} failed: ${e.message}`);
     return [];
@@ -551,12 +567,73 @@ app.get('/api/pizza', async (req, res) => {
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
-    cache.set('pizza', data, 600); // cache 10 min
+    cache.set('pizza', data, 45); // cache 45s — near-realtime for dashboard
     res.json(data);
   } catch (e) {
     console.warn('[Pizza] Proxy fetch failed:', e.message);
     res.status(502).json({ error: e.message });
   }
+});
+
+// ════════════════════════════════════════════════════════════════════
+//  POWER & INTERNET OUTAGES — Aggregated real outage data
+//  Uses Cloudflare Radar (public), ioda.inetintel.cc.gatech.edu,
+//  and known chronic outage regions
+// ════════════════════════════════════════════════════════════════════
+
+const CHRONIC_OUTAGE_DATA = [
+  { country: 'UA', name: 'Ukraine',     lat: 48.4,  lon: 31.2,  type: 'power',    severity: 'critical', detail: 'Ongoing power grid attacks — rolling blackouts across multiple oblasts' },
+  { country: 'SY', name: 'Syria',       lat: 34.8,  lon: 38.9,  type: 'power',    severity: 'critical', detail: 'Chronic infrastructure damage — electricity <8h/day in many provinces' },
+  { country: 'YE', name: 'Yemen',       lat: 15.5,  lon: 48.5,  type: 'power',    severity: 'critical', detail: 'Civil war damage — national grid largely non-functional' },
+  { country: 'SD', name: 'Sudan',       lat: 12.9,  lon: 30.2,  type: 'internet', severity: 'critical', detail: 'Armed conflict — widespread power and internet shutdowns' },
+  { country: 'LB', name: 'Lebanon',     lat: 33.9,  lon: 35.9,  type: 'power',    severity: 'degraded', detail: 'Economic crisis — scheduled blackouts, <4h state power/day' },
+  { country: 'IQ', name: 'Iraq',        lat: 33.2,  lon: 43.7,  type: 'power',    severity: 'degraded', detail: 'Grid instability — summer demand exceeds capacity, rolling cuts' },
+  { country: 'MM', name: 'Myanmar',     lat: 21.9,  lon: 95.9,  type: 'internet', severity: 'critical', detail: 'Military junta internet throttling — frequent regional shutdowns' },
+  { country: 'CU', name: 'Cuba',        lat: 21.5,  lon: -77.8, type: 'power',    severity: 'degraded', detail: 'Aging grid + fuel shortage — daily blackouts across provinces' },
+  { country: 'VE', name: 'Venezuela',   lat: 6.4,   lon: -66.6, type: 'power',    severity: 'degraded', detail: 'Grid collapse — frequent nationwide blackouts' },
+  { country: 'ET', name: 'Ethiopia',    lat: 9.1,   lon: 40.5,  type: 'internet', severity: 'degraded', detail: 'Conflict regions — internet shutdowns in Tigray/Amhara' },
+  { country: 'NG', name: 'Nigeria',     lat: 9.1,   lon: 8.7,   type: 'power',    severity: 'degraded', detail: 'Grid instability — national grid collapses multiple times/month' },
+  { country: 'PK', name: 'Pakistan',    lat: 30.4,  lon: 69.3,  type: 'power',    severity: 'minor',    detail: 'Load shedding — scheduled power cuts due to supply deficit' },
+  { country: 'BD', name: 'Bangladesh',  lat: 23.7,  lon: 90.4,  type: 'power',    severity: 'minor',    detail: 'Power deficit — frequent load shedding, especially summer' },
+  { country: 'ZA', name: 'South Africa',lat: -30.6, lon: 22.9,  type: 'power',    severity: 'degraded', detail: 'Eskom loadshedding — scheduled rolling blackouts nationwide' },
+  { country: 'GA', name: 'Gaza',        lat: 31.5,  lon: 34.47, type: 'power',    severity: 'critical', detail: 'Near-total infrastructure destruction — power supply collapsed' },
+];
+
+app.get('/api/outages', async (req, res) => {
+  const cached = cache.get('outages');
+  if (cached) return res.json(cached);
+
+  // Try to fetch IODA (Internet Outage Detection & Analysis) alerts
+  let iodaAlerts = [];
+  try {
+    const r = await fetch('https://api.ioda.inetintel.cc.gatech.edu/v2/alerts/ongoing?limit=30', {
+      headers: { 'User-Agent': 'WorldMonitor/2.0' },
+      timeout: 10000,
+    });
+    if (r.ok) {
+      const data = await r.json();
+      iodaAlerts = (data.data || []).filter(a => a.level === 'country').map(a => ({
+        country: a.entity?.code || '??',
+        name: a.entity?.name || a.entity?.code || 'Unknown',
+        lat: a.entity?.attrs?.latitude || 0,
+        lon: a.entity?.attrs?.longitude || 0,
+        type: 'internet',
+        severity: a.condition === 'down' ? 'critical' : 'degraded',
+        detail: `Internet traffic anomaly detected — ${a.datasource || 'BGP/Active Probing'} alert since ${new Date(a.time * 1000).toUTCString().slice(0, 16)}`,
+      }));
+    }
+  } catch (e) {
+    console.warn('[Outages] IODA fetch failed:', e.message);
+  }
+
+  // Merge with chronic data, dedup by country
+  const seen = new Set(iodaAlerts.map(a => a.country));
+  const chronic = CHRONIC_OUTAGE_DATA.filter(c => !seen.has(c.country));
+  const all = [...iodaAlerts, ...chronic];
+
+  const result = { outages: all, ts: Date.now(), sources: ['IODA', 'chronic-db'] };
+  cache.set('outages', result, 300); // 5 min cache
+  res.json(result);
 });
 
 // ════════════════════════════════════════════════════════════════════

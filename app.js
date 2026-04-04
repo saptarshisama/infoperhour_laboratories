@@ -123,26 +123,51 @@
   let globeInstance = null;
 
   function initGlobe() {
-    if (globeInstance) return;
     const container = $('globe-container');
     if (!container || typeof Globe === 'undefined') return;
 
+    // Destroy old instance if re-initializing
+    if (globeInstance) {
+      container.innerHTML = '';
+      globeInstance = null;
+    }
+
+    const w = container.clientWidth || 800;
+    const h = container.clientHeight || 600;
+
     globeInstance = Globe()(container)
+      .width(w)
+      .height(h)
       .globeImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg')
       .bumpImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png')
       .backgroundColor('#080c14')
       .showAtmosphere(true)
       .atmosphereColor('#0af0c0')
-      .atmosphereAltitude(0.12)
-      .showGraticule(true);
+      .atmosphereAltitude(0.15)
+      .showGraticules(true);
 
-    // Size to container
-    const mp = $('map-panel');
-    if (mp) {
-      globeInstance.width(mp.clientWidth).height(mp.clientHeight);
-    }
+    // Plot current events as coloured points
+    updateGlobePoints();
 
-    // Plot current events as points
+    // Handle resize
+    window.addEventListener('resize', () => {
+      if (globeInstance && $('globe-container').style.display !== 'none') {
+        globeInstance.width(container.clientWidth).height(container.clientHeight);
+      }
+    });
+
+    // Auto-rotate slowly
+    globeInstance.controls().autoRotate = true;
+    globeInstance.controls().autoRotateSpeed = 0.4;
+
+    // Set initial view to match flat map
+    globeInstance.pointOfView({ lat: 20, lng: 12, altitude: 2.5 }, 0);
+
+    console.log('[Globe] Initialized', w, 'x', h);
+  }
+
+  function updateGlobePoints() {
+    if (!globeInstance) return;
     const evts = EVENTS.getAll().filter(e => e.lat && e.lon);
     globeInstance
       .pointsData(evts)
@@ -152,22 +177,24 @@
         const cats = EVENTS.getCategories();
         return (cats[e.category] || cats.political).color;
       })
-      .pointAltitude(0.01)
-      .pointRadius(0.4)
-      .pointLabel(e => `<div style="font-family:monospace;font-size:12px;color:#0af0c0"><b>${e.headline}</b><br/>${e.location}</div>`);
-
-    console.log('[Globe] Initialized with', evts.length, 'event points');
+      .pointAltitude(e => e.severity >= 4 ? 0.06 : 0.02)
+      .pointRadius(e => e.severity >= 4 ? 0.6 : 0.35)
+      .pointLabel(e => `<div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#0af0c0;background:rgba(8,12,22,0.9);padding:6px 10px;border-radius:4px;border:1px solid rgba(10,240,192,0.2)"><b>${e.headline}</b><br/><span style="color:#94a3b8">${e.location}</span></div>`);
   }
 
   function switchToGlobe() {
+    const container = $('globe-container');
     $('map').style.display = 'none';
-    $('globe-container').style.display = 'block';
-    initGlobe();
-    // Move map-topbar and overlay above the globe
+    container.style.display = 'block';
+    // Small delay so container has dimensions before globe init
+    setTimeout(() => initGlobe(), 50);
+    // Move controls above the globe
     const mapTopbar = $('map-topbar');
     const overlayPanel = $('overlay-panel');
+    const pizzaWidget = $('pizza-widget');
     if (mapTopbar) mapTopbar.style.zIndex = '1100';
     if (overlayPanel) overlayPanel.style.zIndex = '1100';
+    if (pizzaWidget) pizzaWidget.style.zIndex = '1100';
   }
 
   function switchToFlat() {
@@ -175,8 +202,10 @@
     $('globe-container').style.display = 'none';
     const mapTopbar = $('map-topbar');
     const overlayPanel = $('overlay-panel');
+    const pizzaWidget = $('pizza-widget');
     if (mapTopbar) mapTopbar.style.zIndex = '';
     if (overlayPanel) overlayPanel.style.zIndex = '';
+    if (pizzaWidget) pizzaWidget.style.zIndex = '';
   }
 
   document.querySelectorAll('input[name="mapview"]').forEach(radio => {
@@ -364,10 +393,13 @@
     try {
       const { mapEvents, newsItems } = await EVENTS.fetchAll();
       renderEvents(); renderNews(); updateTicker(mapEvents, newsItems);
-      if (globeInstance && $('globe-container').style.display !== 'none') {
-        const evts = EVENTS.getAll().filter(e => e.lat && e.lon);
-        globeInstance.pointsData(evts);
-      }
+      // Refresh all active overlays
+      if ($('tog-weather')?.checked)  { WEATHER.disable(); WEATHER.enable(leafletMap); }
+      if ($('tog-outages')?.checked)  { OUTAGES.disable(); OUTAGES.enable(leafletMap); }
+      if ($('tog-aviation')?.checked) { AVIATION.disable(); AVIATION.enable(leafletMap); }
+      if ($('tog-marine')?.checked)   { MARINE.disable(); MARINE.enable(leafletMap); }
+      // Update globe points
+      updateGlobePoints();
     } catch (e) { console.warn('[APP] Manual refresh failed:', e); }
   }
   countdownEl.addEventListener('click', forceRefresh);
@@ -378,18 +410,7 @@
     if (refreshCountdown <= 0) refreshCountdown = REFRESH_SECS;
   }, 1000);
 
-  setInterval(async () => {
-    refreshCountdown = REFRESH_SECS;
-    try {
-      const { mapEvents, newsItems } = await EVENTS.fetchAll();
-      renderEvents(); renderNews(); updateTicker(mapEvents, newsItems);
-      // Update globe points if visible
-      if (globeInstance && $('globe-container').style.display !== 'none') {
-        const evts = EVENTS.getAll().filter(e => e.lat && e.lon);
-        globeInstance.pointsData(evts);
-      }
-    } catch (e) { console.warn('[APP] Refresh failed:', e); }
-  }, REFRESH_SECS * 1000);
+  setInterval(() => forceRefresh(), REFRESH_SECS * 1000);
 
   // ── Mobile Navigation ─────────────────────────────────────────────────
   const btnMenu = $('btn-menu'), btnChat = $('btn-chat');

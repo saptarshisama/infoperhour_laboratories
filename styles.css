@@ -72,12 +72,13 @@ button   { cursor: pointer; outline: none; touch-action: manipulation; -webkit-t
   height: var(--topbar-h);
   background: rgba(6,10,18,0.99);
   border-bottom: 1px solid var(--border-hi);
+  overflow: hidden;
   display: flex; align-items: center;
   padding: 0 12px; gap: 12px;
   z-index: 1000;
 }
 
-#tb-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+#tb-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; overflow: hidden; max-width: 30%; }
 
 #brand { display: flex; align-items: center; gap: 7px; flex-direction: column; align-items: flex-start; gap: 1px; }
 #brand-credit {
@@ -141,7 +142,7 @@ button   { cursor: pointer; outline: none; touch-action: manipulation; -webkit-t
 }
 @keyframes ticker-scroll { from{transform:translateX(100%)} to{transform:translateX(-200%)} }
 
-#tb-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+#tb-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; overflow: hidden; }
 .tb-stat  { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-dim); }
 #online-num, #aircraft-count, #ship-count { color: var(--text); font-weight: 600; font-family: var(--mono); }
 #utc-wrap { display: flex; align-items: center; gap: 4px; }

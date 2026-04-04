@@ -8,7 +8,7 @@
 const PIZZA = (() => {
 
   const API_URL  = 'https://www.pizzint.watch/api/dashboard-data';
-  const INTERVAL = 10 * 60 * 1000; // 10 minutes
+  const INTERVAL = 60 * 1000; // 60 seconds — near-realtime polling
 
   const DEFCON_COLORS = {
     1: '#e03040',  // critical red
