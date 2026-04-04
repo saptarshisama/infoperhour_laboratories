@@ -22,7 +22,6 @@ services:
   - type: web
     name: infoperhour-frontend
     env: static
-    rootDir: World_Monitor
     staticPublishPath: .
     buildCommand: ""
     autoDeploy: true
