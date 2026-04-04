@@ -69,13 +69,13 @@
   <aside id="left-panel">
     <div class="panel-hdr">
       <div class="panel-tabs">
-        <button class="ptab active" id="tab-events" data-tab="events">⬡ EVENTS</button>
-        <button class="ptab" id="tab-news" data-tab="news">📡 INTEL FEED</button>
+        <button class="ptab" id="tab-events" data-tab="events">⬡ EVENTS</button>
+        <button class="ptab active" id="tab-news" data-tab="news">📡 INTEL FEED</button>
       </div>
     </div>
 
     <!-- Events tab filters -->
-    <div id="events-filters" class="filter-area">
+    <div id="events-filters" class="filter-area" style="display:none">
       <div class="filter-row">
         <button class="fbtn active" data-cat="all">ALL</button>
         <button class="fbtn conflict" data-cat="conflict">CONFLICT</button>
@@ -87,7 +87,7 @@
     </div>
 
     <!-- News tab filters -->
-    <div id="news-filters" class="filter-area" style="display:none">
+    <div id="news-filters" class="filter-area">
       <div class="filter-row">
         <button class="fbtn active" data-ncat="all">ALL</button>
         <button class="fbtn conflict" data-ncat="conflict">WAR</button>
@@ -98,10 +98,10 @@
     </div>
 
     <!-- Feed containers -->
-    <div id="events-feed" class="feed-scroll">
+    <div id="events-feed" class="feed-scroll" style="display:none">
       <div class="feed-spinner"><div class="spinner"></div><span>Querying OSINT sources…</span></div>
     </div>
-    <div id="news-feed" class="feed-scroll" style="display:none">
+    <div id="news-feed" class="feed-scroll">
       <div class="feed-spinner"><div class="spinner"></div><span>Loading intelligence feeds…</span></div>
     </div>
 

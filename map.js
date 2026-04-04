@@ -16,7 +16,7 @@ const MAP = (() => {
       preferCanvas: true
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter_nolabels/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter_nolabels/{z}/{x}/{y}.png', {
       subdomains: 'abcd', maxZoom: 20,
       attribution: '© CARTO'
     }).addTo(leafletMap);

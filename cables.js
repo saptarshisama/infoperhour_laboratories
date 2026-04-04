@@ -173,6 +173,63 @@ const CABLES = (() => {
       owner: 'Quintillion', capacity: '20 Tbps',
       path: [[51.5,-0.1],[62.0,-10.0],[65.0,-15.0],[68.0,-15.0],[70.0,-25.0],[70.0,-50.0],[66.0,-53.0],[63.0,-70.0],[60.0,-77.0],[53.5,-60.0],[44.6,-63.6],[40.7,-74.0]]
     },
+
+    // ── 2023–2024 NEW CABLES ───────────────────────────────────────────
+    {
+      name: '2Africa', color: '#10b981',
+      owner: 'Meta/Consortium', capacity: '180 Tbps',
+      // Longest cable ever: circles entire African continent + Middle East spurs
+      path: [
+        [51.5,-0.1],[48.0,-5.0],[38.4,-9.1],[28.0,-15.0],[14.7,-17.5],
+        [4.0,-2.0],[-4.0,9.0],[-8.8,13.2],[-22.9,-43.2],  // W Africa branch
+        [-33.9,18.4],[-25.9,32.9],[-4.0,39.7],[11.6,43.2],  // S & E Africa
+        [15.0,42.0],[25.1,56.3],[22.3,114.1],[1.3,103.8],  // Middle East & Asia spur
+        [13.1,43.1],[30.1,31.2],[32.1,34.8],[36.9,10.3],   // Egypt & Tunisia
+        [43.3,5.4],[51.5,-0.1]                              // back to UK
+      ]
+    },
+    {
+      name: 'Echo (Google)', color: '#34d399',
+      owner: 'Google', capacity: '256 Tbps',
+      // Trans-Pacific: Oregon → Hawaii → Guam → Philippines → Singapore
+      path: [[45.5,-122.7],[21.3,-157.8],[13.5,144.8],[14.6,121.0],[1.3,103.8]]
+    },
+    {
+      name: 'Bifrost (Meta)', color: '#6ee7b7',
+      owner: 'Meta', capacity: '200 Tbps',
+      // Trans-Pacific: California → Hawaii → Philippines → Singapore (separate route)
+      path: [[37.8,-122.5],[21.3,-157.8],[9.0,168.0],[14.6,121.0],[1.3,103.8]]
+    },
+    {
+      name: 'Apricot (Google)', color: '#fcd34d',
+      owner: 'Google/NTT/PLCN', capacity: '190 Tbps',
+      // Japan → Taiwan → Philippines → Guam → Indonesia → Singapore
+      path: [[35.7,139.7],[25.2,121.5],[14.6,121.0],[13.5,144.8],[-8.4,115.3],[1.3,103.8]]
+    },
+    {
+      name: 'Blue Raman', color: '#60a5fa',
+      owner: 'Google', capacity: '16 Tbps',
+      // Italy → Egypt → Saudi Arabia → India (bypasses Suez Canal chokepoint)
+      path: [[38.1,15.6],[30.1,31.2],[20.0,38.5],[12.8,45.0],[13.1,43.1],[22.2,68.9],[19.1,72.9]]
+    },
+    {
+      name: 'SAS-1 (South Atlantic)', color: '#f87171',
+      owner: 'Angola Cables', capacity: '72 Tbps',
+      // Brazil → Ascension Island → Angola → South Africa
+      path: [[-3.7,-38.5],[-7.9,-14.4],[-8.8,13.2],[-33.9,18.4]]
+    },
+    {
+      name: 'Medusa', color: '#c084fc',
+      owner: 'Consortium', capacity: '25 Tbps',
+      // Portugal → Spain → France → Italy → Greece → Egypt → Morocco
+      path: [[38.4,-9.1],[36.7,-4.4],[43.3,5.4],[37.5,15.1],[35.3,25.1],[30.1,31.2],[14.7,-17.5],[38.4,-9.1]]
+    },
+    {
+      name: 'Hawaiki Nui', color: '#fb923c',
+      owner: 'Hawaiki Nui', capacity: '100 Tbps',
+      // US West → Hawaii → Samoa → New Zealand → Australia
+      path: [[45.5,-122.7],[21.3,-157.8],[-13.8,-172.0],[-36.8,174.8],[-33.9,151.2]]
+    },
   ];
 
   // Landing point stations (major cable hubs)
@@ -207,6 +264,13 @@ const CABLES = (() => {
     { name: 'Manasquan, NJ',        lat: 40.12,  lon: -74.04, cables: 5 },
     { name: 'Busan, Korea',         lat: 35.09,  lon: 129.07, cables: 9 },
     { name: 'Taipei, Taiwan',       lat: 25.18,  lon: 121.47, cables: 8 },
+    { name: 'Accra, Ghana',         lat: 5.56,   lon: -0.22,  cables: 5 },
+    { name: 'Lagos, Nigeria',       lat: 6.45,   lon: 3.40,   cables: 6 },
+    { name: 'Guam',                 lat: 13.44,  lon: 144.79, cables: 8 },
+    { name: 'Auckland, NZ',         lat: -36.84, lon: 174.76, cables: 4 },
+    { name: 'Jeddah, Saudi Arabia', lat: 21.52,  lon: 39.18,  cables: 7 },
+    { name: 'Bali, Indonesia',      lat: -8.40,  lon: 115.19, cables: 5 },
+    { name: 'Tunis, Tunisia',       lat: 36.82,  lon: 10.17,  cables: 4 },
   ];
 
   // Color per cable for variety

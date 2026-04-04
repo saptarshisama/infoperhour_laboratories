@@ -6,7 +6,7 @@
 
 (async () => {
 
-  const state = { cat: 'all', ncat: 'all', tab: 'events' };
+  const state = { cat: 'all', ncat: 'all', tab: 'news' };
   const CATS  = EVENTS.getCategories();
 
   const $ = id => document.getElementById(id);
