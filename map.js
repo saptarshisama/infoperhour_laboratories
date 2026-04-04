@@ -35,6 +35,10 @@ const MAP = (() => {
       }).addTo(leafletMap);
     });
 
+    // Custom pane for cables — z-index below tiles so they render behind land
+    leafletMap.createPane('cablesPane');
+    leafletMap.getPane('cablesPane').style.zIndex = 150; // tiles are 200, so cables go under
+
     evtLayer = L.layerGroup().addTo(leafletMap);
 
     // Coordinate display
@@ -109,7 +113,7 @@ const MAP = (() => {
     document.getElementById('ev-popup-badge').style.background = cat.color + '18';
     document.getElementById('ev-popup-title').textContent = ev.headline;
     document.getElementById('ev-popup-meta').innerHTML =
-      `<span>📍 ${ev.location}</span><span>⚠ S${ev.severity}</span><span>📡 ${ev.source}</span><span>🕒 ${EVENTS.timeAgoFn(ev.time)}</span>`;
+      `<span>${ev.location}</span><span>S${ev.severity}</span><span>${ev.source}</span><span>${EVENTS.timeAgoFn(ev.time)}</span>`;
     document.getElementById('ev-popup-desc').textContent = ev.description || '';
     const link = document.getElementById('ev-popup-link');
     link.href = ev.url || '#';

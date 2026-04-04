@@ -54,11 +54,15 @@ const PIZZA = (() => {
     const dlEl = document.getElementById('pizza-defcon-val');
     if (dlEl) { dlEl.textContent = defcon; dlEl.style.color = color; }
 
-    // Freshness badge
+    // Freshness badge — pulsing LIVE indicator
     const frEl = document.getElementById('pizza-freshness');
     if (frEl) {
-      frEl.textContent = fresh ? '● LIVE' : '◌ STALE';
+      frEl.innerHTML = fresh
+        ? '<span class="pdot green" style="display:inline-block"></span> LIVE'
+        : '◌ STALE';
       frEl.style.color = fresh ? '#28d890' : '#5a7888';
+      frEl.style.fontWeight = fresh ? '700' : '400';
+      frEl.style.letterSpacing = fresh ? '1px' : '0';
     }
 
     // Index bar

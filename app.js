@@ -81,6 +81,9 @@
   $('tog-weather')?.addEventListener('change', e => {
     if (e.target.checked) WEATHER.enable(leafletMap); else WEATHER.disable();
   });
+  $('tog-outages')?.addEventListener('change', e => {
+    if (e.target.checked) OUTAGES.enable(leafletMap); else OUTAGES.disable();
+  });
   $('tog-cables')?.addEventListener('change', e => {
     if (e.target.checked) CABLES.enable(leafletMap); else CABLES.disable();
     const ovl = $('ovlc-cables');
@@ -96,11 +99,6 @@
     const ovl = $('ovlc-refineries');
     if (ovl) ovl.textContent = e.target.checked ? REFINERIES.count() : '';
   });
-  $('tog-pizza')?.addEventListener('change', e => {
-    const widget = $('pizza-widget');
-    if (widget) widget.style.display = e.target.checked ? '' : 'none';
-  });
-
   // View Mode section collapse
   $('viewmode-hdr')?.addEventListener('click', () => {
     const body  = $('viewmode-body');
@@ -249,7 +247,7 @@
       </div>
       <div class="ev-headline">${icon}${escHtml(ev.headline)}</div>
       <div class="mts-meta">
-        <span class="ev-loc">📍 ${escHtml(ev.location || ev.source)}</span>
+        <span class="ev-loc">${escHtml(ev.location || ev.source)}</span>
         <span class="ev-time" style="font-size:9px;color:var(--muted)">${escHtml(ev.source)}</span>
       </div>`;
     card.addEventListener('click', () => MAP.showPopup(ev));
@@ -353,12 +351,26 @@
   const REFRESH_SECS = 120;
   let refreshCountdown = REFRESH_SECS;
 
-  // Countdown shown in event-count-wrap area
-  const countdownEl = document.createElement('span');
+  // Countdown shown in event-count-wrap area — clickable to force refresh
+  const countdownEl = document.createElement('button');
   countdownEl.id = 'refresh-countdown';
-  countdownEl.title = 'Next feed refresh';
+  countdownEl.title = 'Click to refresh now';
   const evWrap = $('event-count-wrap');
   if (evWrap) evWrap.after(countdownEl);
+
+  async function forceRefresh() {
+    refreshCountdown = REFRESH_SECS;
+    countdownEl.textContent = 'refreshing...';
+    try {
+      const { mapEvents, newsItems } = await EVENTS.fetchAll();
+      renderEvents(); renderNews(); updateTicker(mapEvents, newsItems);
+      if (globeInstance && $('globe-container').style.display !== 'none') {
+        const evts = EVENTS.getAll().filter(e => e.lat && e.lon);
+        globeInstance.pointsData(evts);
+      }
+    } catch (e) { console.warn('[APP] Manual refresh failed:', e); }
+  }
+  countdownEl.addEventListener('click', forceRefresh);
 
   setInterval(() => {
     refreshCountdown--;

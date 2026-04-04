@@ -156,6 +156,12 @@
           <span class="ovl-label">Weather</span>
           <span class="ovl-count" id="ovlc-weather"></span>
         </label>
+        <label class="ovl-row">
+          <input type="checkbox" id="tog-outages" />
+          <span class="ovl-dot" style="background:#ef4444"></span>
+          <span class="ovl-label">Power/Net Outages</span>
+          <span class="ovl-count" id="ovlc-outages"></span>
+        </label>
 
         <div class="ovl-section-title" style="margin-top:8px">LIVE TRACKING</div>
         <label class="ovl-row">
@@ -189,12 +195,6 @@
           <span class="ovl-dot" style="background:#f97316"></span>
           <span class="ovl-label">Oil Refineries (Top 50)</span>
           <span class="ovl-count" id="ovlc-refineries"></span>
-        </label>
-
-        <label class="ovl-row">
-          <input type="checkbox" id="tog-pizza" checked />
-          <span class="ovl-dot" style="background:#0af0c0"></span>
-          <span class="ovl-label">Pizza Index</span>
         </label>
 
         <!-- VIEW MODE (retractable) -->
@@ -245,7 +245,6 @@
     <div id="pizza-widget">
       <div id="pizza-hdr">
         <span id="pizza-hdr-label">PENTAGON PIZZA INDEX</span>
-        <span id="pizza-live-badge"><span class="pdot red"></span>LIVE</span>
         <button id="pizza-min" title="Minimize">−</button>
       </div>
       <div id="pizza-body">
@@ -299,8 +298,8 @@
 
 <!-- ═══ MOBILE NAVIGATION ════════════════════════════════════════════ -->
 <div id="mobile-nav">
-  <button id="btn-menu">⬡ FEED</button>
-  <button id="btn-chat">💬 CHAT</button>
+  <button id="btn-menu">FEED</button>
+  <button id="btn-chat">CHAT</button>
 </div>
 
 <!-- ═══ EVENT DETAIL POPUP ═══════════════════════════════════════════ -->
@@ -331,6 +330,7 @@ window.CONFIG = {
 <script src="cables.js"></script>
 <script src="datacenters.js"></script>
 <script src="refineries.js"></script>
+<script src="outages.js"></script>
 <script src="pizza.js"></script>
 <script src="chat.js"></script>
 <script src="app.js"></script>

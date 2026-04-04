@@ -298,21 +298,23 @@ const CABLES = (() => {
       // Glow shadow layer (wider, very transparent) — renders under the cable line
       const glow = L.polyline(cable.path, {
         color,
-        weight: 6,
-        opacity: 0.18,
+        weight: 5,
+        opacity: 0.12,
         smoothFactor: 1.5,
         interactive: false,
+        pane: 'cablesPane',
       });
       cableGroup.addLayer(glow);
 
-      // Core cable line (thin, bright)
+      // Core cable line (thin, subdued — behind land)
       const line = L.polyline(cable.path, {
         color,
-        weight: 2.2,
-        opacity: 0.85,
+        weight: 1.6,
+        opacity: 0.45,
         className: 'cable-line',
         smoothFactor: 1.5,
         interactive: true,
+        pane: 'cablesPane',
       });
       line.bindTooltip(
         `<div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7">
@@ -342,7 +344,7 @@ const CABLES = (() => {
         iconSize:   [size, size],
         iconAnchor: [size/2, size/2],
       });
-      const m = L.marker([lp.lat, lp.lon], { icon });
+      const m = L.marker([lp.lat, lp.lon], { icon, pane: 'cablesPane' });
       m.bindTooltip(
         `<div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7">
           <strong style="color:#f59e0b">📡 ${lp.name}</strong><br/>
